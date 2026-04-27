@@ -1007,10 +1007,12 @@
       const explicit = params.get("api");
       if (explicit) return explicit;
 
-      // If running on same domain (Render or local), use same origin
-      if (window.location.port) return window.location.origin;
-      
-      // Otherwise default to localhost:3000 for local development
+      const host = String(window.location.hostname || "").toLowerCase();
+      if (host && host !== "localhost" && host !== "127.0.0.1" && host !== "::1") {
+        return window.location.origin;
+      }
+
+      // Local development fallback
       return "http://localhost:3000";
     })();
 
