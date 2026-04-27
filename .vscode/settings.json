@@ -1,0 +1,7 @@
+{
+  "liveServer.settings.ignoreFiles": [
+    "**/sensor-log.json",
+    "**/latest-data.json",
+    "**/routes.json"
+  ]
+}

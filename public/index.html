@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blind Stick Live Monitor</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0f14;
+      --panel: #121826;
+      --border: rgba(255,255,255,0.08);
+      --text: #eef2ff;
+      --muted: #97a3b6;
+      --good: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --blue: #60a5fa;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: radial-gradient(circle at top, #121a2a 0%, var(--bg) 55%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .topbar, .card, .stat, .history-row {
+      border: 1px solid var(--border);
+      background: rgba(18, 24, 38, 0.92);
+      box-shadow: 0 12px 36px rgba(0,0,0,0.25);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 20px;
+      border-radius: 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    h1, h2, h3 { margin: 0; }
+    h1 { font-size: 1.4rem; }
+    .muted { color: var(--muted); font-size: 0.92rem; }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      font-size: 0.9rem;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--good);
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .stat {
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .label { color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; }
+    .value { font-size: 1.7rem; font-weight: 700; margin-top: 10px; }
+    .mono { font-family: Consolas, monospace; }
+
+    .card {
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(96, 165, 250, 0.12);
+      color: #bfdbfe;
+      border: 1px solid rgba(96,165,250,0.22);
+      font-size: 0.85rem;
+    }
+
+    .table {
+      display: grid;
+      gap: 10px;
+    }
+
+    .history-row {
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: 110px 110px 90px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .badge.water { background: rgba(20, 184, 166, 0.15); color: #5eead4; }
+    .badge.dry { background: rgba(59, 130, 246, 0.14); color: #93c5fd; }
+
+    .error {
+      color: #fecaca;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+    }
+
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .history-row { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .wrap { padding: 14px; }
+      .grid { grid-template-columns: 1fr; }
+      .history-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1>Blind Stick Live Monitor</h1>
+        <div class="muted">Real-time sensor data from the ESP32</div>
+      </div>
+      <div class="status"><span class="dot" id="dot"></span><span id="statusText">Connecting...</span></div>
+    </div>
+
+    <div id="errorBox" class="error" style="display:none;"></div>
+
+    <div class="grid">
+      <div class="stat"><div class="label">Distance</div><div class="value mono" id="distance">-- cm</div></div>
+      <div class="stat"><div class="label">Water</div><div class="value" id="water">--</div></div>
+      <div class="stat"><div class="label">Latitude</div><div class="value mono" id="lat">--</div></div>
+      <div class="stat"><div class="label">Longitude</div><div class="value mono" id="lng">--</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Latest Reading</h2>
+          <div class="muted">Updated in real time from <span class="mono">/latest</span></div>
+        </div>
+        <div class="pill mono" id="lastTime">Waiting...</div>
+      </div>
+      <div class="table" id="history"></div>
+    </div>
+  </div>
+
+  <script>
+    const statusText = document.getElementById('statusText');
+    const dot = document.getElementById('dot');
+    const errorBox = document.getElementById('errorBox');
+    const historyEl = document.getElementById('history');
+
+    const nodes = {
+      distance: document.getElementById('distance'),
+      water: document.getElementById('water'),
+      lat: document.getElementById('lat'),
+      lng: document.getElementById('lng'),
+      lastTime: document.getElementById('lastTime')
+    };
+
+    async function fetchJson(url) {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`${url} failed`);
+      return await res.json();
+    }
+
+    function setOnline(online) {
+      statusText.textContent = online ? 'Live' : 'Offline';
+      dot.style.background = online ? 'var(--good)' : 'var(--bad)';
+      dot.style.boxShadow = online ? '0 0 12px rgba(34, 197, 94, 0.5)' : '0 0 12px rgba(239, 68, 68, 0.5)';
+    }
+
+    function renderLatest(data) {
+      nodes.distance.textContent = data.distance == null ? '-- cm' : `${Math.round(data.distance)} cm`;
+      nodes.water.innerHTML = `<span class="badge ${Number(data.water) === 1 ? 'water' : 'dry'}">${Number(data.water) === 1 ? 'WATER' : 'DRY'}</span>`;
+      nodes.lat.textContent = data.lat == null ? '--' : Number(data.lat).toFixed(6);
+      nodes.lng.textContent = data.lng == null ? '--' : Number(data.lng).toFixed(6);
+      nodes.lastTime.textContent = data.time ? `Last update: ${data.time}` : 'Waiting...';
+    }
+
+    function renderHistory(rows) {
+      historyEl.innerHTML = '';
+      if (!rows.length) {
+        historyEl.innerHTML = '<div class="muted">No readings yet.</div>';
+        return;
+      }
+
+      rows.slice().reverse().slice(0, 12).forEach((row) => {
+        const el = document.createElement('div');
+        el.className = 'history-row';
+        el.innerHTML = `
+          <div class="mono">${row.time || '--'}</div>
+          <div class="mono">${row.distance == null ? '--' : `${Math.round(row.distance)} cm`}</div>
+          <div><span class="badge ${Number(row.water) === 1 ? 'water' : 'dry'}">${Number(row.water) === 1 ? 'WATER' : 'DRY'}</span></div>
+          <div class="muted">Route ${row.route ?? 0} · Waypoint ${row.waypoint ?? 0}</div>
+        `;
+        historyEl.appendChild(el);
+      });
+    }
+
+    async function refresh() {
+      try {
+        const [latest, log] = await Promise.all([
+          fetchJson('/latest'),
+          fetchJson('/log')
+        ]);
+
+        setOnline(true);
+        errorBox.style.display = 'none';
+        renderLatest(latest || {});
+        renderHistory(Array.isArray(log) ? log : []);
+      } catch (err) {
+        setOnline(false);
+        errorBox.style.display = 'block';
+        errorBox.textContent = 'Live data unavailable: ' + err.message;
+      }
+    }
+
+    refresh();
+    setInterval(refresh, 1000);
+  </script>
+</body>
+</html>

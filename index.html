@@ -1,0 +1,3140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Assistive Blind Stick - React Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js" crossorigin></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0b0f;
+      --surface: #13151f;
+      --border: rgba(255, 255, 255, 0.07);
+      --text: #e8ebf5;
+      --muted: #97a0b5;
+      --blue: #3b82f6;
+      --amber: #f59e0b;
+      --teal: #14b8a6;
+      --green: #22c55e;
+      --red: #ef4444;
+      --sidebar-w: 220px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body, #root {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", sans-serif;
+    }
+
+    h1, h2, h3, h4 {
+      margin: 0;
+      font-family: "Space Grotesk", sans-serif;
+      letter-spacing: 0.15px;
+    }
+
+    button, input { font-family: inherit; }
+
+    .app-shell {
+      height: 100%;
+      display: grid;
+      grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--border);
+      background: #0e1118;
+      padding: 18px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .brand {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #121523;
+    }
+
+    .brand-title {
+      font-size: 0.95rem;
+      line-height: 1.35;
+      color: #dce8ff;
+      font-family: "Space Grotesk", sans-serif;
+    }
+
+    .brand-sub {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .server-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--green);
+    }
+
+    .dot.offline { background: var(--red); }
+
+    .nav {
+      display: grid;
+      gap: 6px;
+    }
+
+    .nav-item {
+      position: relative;
+      width: 100%;
+      background: transparent;
+      border: 1px solid transparent;
+      border-left: 3px solid transparent;
+      border-radius: 10px;
+      color: #ced7ea;
+      text-align: left;
+      padding: 10px 11px;
+      cursor: pointer;
+      transition: 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    .nav-item.active {
+      border-color: var(--border);
+      border-left-color: var(--blue);
+      background: rgba(59, 130, 246, 0.09);
+      color: #f2f7ff;
+    }
+
+    .nav-item.live-pulse {
+      animation: navPulse 0.8s ease-in-out 2;
+    }
+
+    @keyframes navPulse {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.45); }
+      70% { box-shadow: 0 0 0 9px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+
+    .main {
+      height: 100%;
+      overflow-y: auto;
+      padding: 18px;
+      padding-bottom: 90px;
+    }
+
+    .page {
+      animation: pageIn 0.25s ease;
+      display: grid;
+      gap: 14px;
+    }
+
+    @keyframes pageIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .header-card {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .header-right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+    }
+
+    .status-chip {
+      padding: 5px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mono {
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    .offline-banner {
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fecaca;
+      background: rgba(239, 68, 68, 0.12);
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-size: 0.9rem;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric-title {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.45px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 1.52rem;
+      font-family: Consolas, "Courier New", monospace;
+      font-weight: 700;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .chart-wrap {
+      height: 260px;
+    }
+
+    .chart-subtitle {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .event-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 8px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .event-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      background: #10131d;
+      display: grid;
+      gap: 5px;
+    }
+
+    .event-item.new {
+      animation: slideInTop 0.26s ease;
+    }
+
+    @keyframes slideInTop {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .event-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.35px;
+      border: 1px solid transparent;
+    }
+
+    .badge.obstacle {
+      color: #ffd89c;
+      border-color: rgba(245, 158, 11, 0.45);
+      background: rgba(245, 158, 11, 0.17);
+    }
+
+    .badge.water {
+      color: #99f6e4;
+      border-color: rgba(20, 184, 166, 0.44);
+      background: rgba(20, 184, 166, 0.16);
+    }
+
+    .alert-pill {
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 0.84rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .alert-pill.obstacle {
+      color: #ffd89c;
+      border-color: rgba(245, 158, 11, 0.45);
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .alert-pill.water {
+      color: #99f6e4;
+      border-color: rgba(20, 184, 166, 0.45);
+      background: rgba(20, 184, 166, 0.12);
+    }
+
+    .routes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .route-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      background: #10131c;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .route-card.active {
+      border-color: rgba(59, 130, 246, 0.55);
+      background: rgba(59, 130, 246, 0.12);
+    }
+
+    .route-card h3 {
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    .route-meta {
+      color: var(--muted);
+      font-size: 0.8rem;
+      display: grid;
+      gap: 4px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+      max-height: 420px;
+      overflow-y: auto;
+      padding-right: 3px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 10px;
+      position: relative;
+      align-items: start;
+    }
+
+    .timeline-item:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      left: 13px;
+      top: 22px;
+      width: 2px;
+      height: calc(100% + 6px);
+      background: var(--border);
+    }
+
+    .status-dot {
+      margin-top: 4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      justify-self: center;
+      background: #6b7280;
+    }
+
+    .status-dot.done { background: var(--green); }
+    .status-dot.current {
+      background: var(--blue);
+      animation: waypointPulse 1.1s ease-in-out infinite;
+    }
+
+    @keyframes waypointPulse {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.55); }
+      70% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+
+    .timeline-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 3px;
+    }
+
+    .timeline-distance {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+    }
+
+    .timeline-instruction {
+      margin: 0;
+      color: #d4dbeb;
+      line-height: 1.4;
+      font-size: 0.9rem;
+    }
+
+    .map-shell {
+      display: grid;
+      gap: 12px;
+    }
+
+    .map-canvas {
+      height: 480px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #0a0b0f;
+    }
+
+    .map-canvas .leaflet-container {
+      height: 100%;
+      width: 100%;
+      background: #0a0b0f;
+      font-family: "Inter", sans-serif;
+    }
+
+    .map-canvas .leaflet-tile {
+      filter: brightness(0.72) saturate(0.7) contrast(1.08) hue-rotate(188deg);
+    }
+
+    .map-canvas .leaflet-popup-content-wrapper,
+    .map-canvas .leaflet-popup-tip {
+      background: #141a28;
+      color: #e6ecff;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .waypoint-popup {
+      display: grid;
+      gap: 4px;
+      min-width: 160px;
+      font-size: 0.8rem;
+      line-height: 1.35;
+    }
+
+    .waypoint-popup .title {
+      font-weight: 700;
+      color: #f1f5ff;
+    }
+
+    .waypoint-popup .instruction {
+      color: #c8d2e7;
+    }
+
+    .waypoint-popup .hazard-tag {
+      justify-self: start;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.35px;
+      border: 1px solid transparent;
+    }
+
+    .waypoint-popup .hazard-tag.obstacle {
+      color: #ffd89c;
+      border-color: rgba(245, 158, 11, 0.45);
+      background: rgba(245, 158, 11, 0.16);
+    }
+
+    .waypoint-popup .hazard-tag.water {
+      color: #99f6e4;
+      border-color: rgba(20, 184, 166, 0.44);
+      background: rgba(20, 184, 166, 0.15);
+    }
+
+    .live-marker {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #3b82f6;
+      border: 2px solid #dbeafe;
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
+      animation: liveMarkerPulse 1.4s ease-out infinite;
+    }
+
+    @keyframes liveMarkerPulse {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.52); }
+      70% { box-shadow: 0 0 0 12px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+
+    .waypoint-ring {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid #93c5fd;
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.42);
+      animation: waypointRingPulse 1.2s ease-out infinite;
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    @keyframes waypointRingPulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.44); }
+      70% { transform: scale(1.15); box-shadow: 0 0 0 11px rgba(59, 130, 246, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+
+    .route-info-panel {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .route-info-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #13151f;
+      padding: 12px;
+      cursor: pointer;
+      transition: 0.2s ease;
+      display: grid;
+      gap: 8px;
+    }
+
+    .route-info-card.active {
+      border-color: rgba(34, 197, 94, 0.55);
+      box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.45);
+      background: #101a16;
+    }
+
+    .route-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.8rem;
+      gap: 10px;
+    }
+
+    .ml-chip {
+      font-size: 0.68rem;
+      border-radius: 999px;
+      padding: 3px 8px;
+      border: 1px solid rgba(34, 197, 94, 0.55);
+      color: #bbf7d0;
+      background: rgba(34, 197, 94, 0.14);
+      text-transform: uppercase;
+      letter-spacing: 0.45px;
+      font-weight: 700;
+      justify-self: start;
+    }
+
+    .safety-track {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+
+    .safety-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
+    .map-meta {
+      color: var(--muted);
+      font-size: 0.84rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 9px 12px;
+      background: #111523;
+      color: #edf2ff;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .btn.primary {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+      background: #11131c;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 10px;
+      text-align: left;
+      font-size: 0.86rem;
+    }
+
+    th {
+      color: #b4bfd6;
+      font-weight: 600;
+      background: #131826;
+    }
+
+    td.distance-danger { color: #fca5a5; }
+
+    .small-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .slider-row {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+
+    .slider-row label {
+      color: #c8d2e7;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--blue);
+    }
+
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 9px 12px;
+      margin-bottom: 10px;
+      background: #111521;
+    }
+
+    .switch {
+      width: 44px;
+      height: 24px;
+      border-radius: 999px;
+      background: #3b4254;
+      border: 1px solid var(--border);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      left: 2px;
+      top: 2px;
+      background: #fff;
+      transition: 0.2s ease;
+    }
+
+    .switch.on { background: rgba(59, 130, 246, 0.55); }
+    .switch.on::after { transform: translateX(20px); }
+
+    .conn-grid {
+      display: grid;
+      gap: 8px;
+      color: #d4ddef;
+      font-size: 0.88rem;
+    }
+
+    .buzzer-indicator {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #10141f;
+    }
+
+    .buzzer-light {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: #3f475a;
+    }
+
+    .buzzer-light.active {
+      background: var(--amber);
+      box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.15);
+    }
+
+    .voice-wave {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 3px;
+      width: 18px;
+      height: 16px;
+    }
+
+    .voice-wave span {
+      width: 3px;
+      border-radius: 999px;
+      background: #3b82f6;
+      animation: voiceWave 1s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+
+    .voice-wave span:nth-child(1) { height: 6px; animation-delay: 0s; }
+    .voice-wave span:nth-child(2) { height: 12px; animation-delay: 0.15s; }
+    .voice-wave span:nth-child(3) { height: 8px; animation-delay: 0.3s; }
+
+    @keyframes voiceWave {
+      0%, 100% { transform: scaleY(0.45); opacity: 0.6; }
+      50% { transform: scaleY(1); opacity: 1; }
+    }
+
+    .voice-fab {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 0;
+      background: #1d4ed8;
+      color: #ffffff;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 12px 28px rgba(29, 78, 216, 0.35);
+      cursor: pointer;
+      z-index: 55;
+    }
+
+    .voice-fab::before {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 2px solid rgba(59, 130, 246, 0.42);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .voice-fab.speaking::before {
+      animation: fabPulse 1.4s ease-out infinite;
+    }
+
+    .voice-fab svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    @keyframes fabPulse {
+      0% { transform: scale(0.78); opacity: 0.7; }
+      70% { transform: scale(1.28); opacity: 0; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    .voice-section {
+      margin-top: 16px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .voice-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .voice-select {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #111523;
+      color: #edf2ff;
+      padding: 10px 12px;
+      font: inherit;
+    }
+
+    .voice-select:focus {
+      outline: 1px solid rgba(59, 130, 246, 0.55);
+    }
+
+    .mobile-tabs {
+      display: none;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-2 { grid-template-columns: 1fr; }
+      .routes-grid { grid-template-columns: 1fr; }
+      .route-info-panel { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 767px) {
+      .app-shell {
+        display: block;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .main {
+        height: calc(100% - 70px);
+        padding: 12px;
+      }
+
+      .grid-4,
+      .small-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .mobile-tabs {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        border-top: 1px solid var(--border);
+        background: #0f121b;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        z-index: 40;
+      }
+
+      .mobile-tab {
+        border: 0;
+        border-top: 2px solid transparent;
+        background: transparent;
+        color: #a9b3c8;
+        padding: 8px 4px;
+        font-size: 0.72rem;
+        display: grid;
+        justify-items: center;
+        gap: 3px;
+      }
+
+      .mobile-tab.active {
+        border-top-color: var(--blue);
+        color: #e7eeff;
+      }
+
+      .voice-fab {
+        right: 16px;
+        bottom: 80px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <div id="runtimeErrorPanel" style="display:none;position:fixed;inset:16px auto auto 16px;max-width:720px;max-height:70vh;overflow:auto;z-index:99999;background:#2a0f13;color:#fecaca;border:1px solid rgba(239,68,68,0.45);border-radius:12px;padding:12px 14px;font-family:Consolas, 'Courier New', monospace;font-size:12px;line-height:1.45;"></div>
+
+  <script>
+    (function () {
+      function showRuntimeError(msg) {
+        var panel = document.getElementById("runtimeErrorPanel");
+        if (!panel) return;
+        panel.style.display = "block";
+        if (panel.textContent) {
+          panel.textContent += "\n\n" + msg;
+        } else {
+          panel.textContent = "Runtime diagnostics:\n\n" + msg;
+        }
+      }
+
+      window.__showRuntimeError = showRuntimeError;
+
+      window.addEventListener("error", function (e) {
+        var details = "[window.error] " + (e.message || "Unknown error");
+        if (e.filename) details += "\nFile: " + e.filename + ":" + (e.lineno || 0) + ":" + (e.colno || 0);
+        showRuntimeError(details);
+      });
+
+      window.addEventListener("unhandledrejection", function (e) {
+        var reason = e && e.reason ? (e.reason.stack || e.reason.message || String(e.reason)) : "Unknown promise rejection";
+        showRuntimeError("[unhandledrejection] " + reason);
+      });
+    })();
+  </script>
+
+  <script type="text/babel">
+    (function preflightDeps() {
+      const missing = [];
+      if (!window.React) missing.push("React failed to load");
+      if (!window.ReactDOM) missing.push("ReactDOM failed to load");
+      if (!window.Babel) missing.push("Babel standalone failed to load");
+      window.__rechartsFallback = false;
+
+      if (!window.Recharts) {
+        window.__rechartsFallback = true;
+        const passthrough = ({ children }) => React.createElement(React.Fragment, null, children);
+        const box = ({ children }) => React.createElement(
+          "div",
+          {
+            style: {
+              width: "100%",
+              height: "100%",
+              border: "1px dashed rgba(255,255,255,0.18)",
+              borderRadius: "10px",
+              display: "grid",
+              placeItems: "center",
+              color: "#9aa3b2",
+              fontSize: "0.82rem",
+              textAlign: "center",
+              padding: "12px"
+            }
+          },
+          children || "Charts unavailable: Recharts CDN blocked"
+        );
+
+        window.Recharts = {
+          ResponsiveContainer: box,
+          LineChart: passthrough,
+          BarChart: passthrough,
+          CartesianGrid: () => null,
+          XAxis: () => null,
+          YAxis: () => null,
+          Tooltip: () => null,
+          ReferenceLine: () => null,
+          Line: () => null,
+          Bar: passthrough,
+          Cell: () => null
+        };
+
+        if (window.__showRuntimeError) {
+          window.__showRuntimeError("[dependency-preflight]\nRecharts failed to load from CDN. Using fallback chart placeholders so the dashboard can still run.");
+        }
+      }
+
+      if (missing.length) {
+        const help = missing.join("\n") + "\n\nCheck internet/CDN access and hard refresh (Ctrl+F5).";
+        if (window.__showRuntimeError) {
+          window.__showRuntimeError("[dependency-preflight]\n" + help);
+        }
+        throw new Error(help);
+      }
+    })();
+
+    const {
+      LineChart,
+      Line,
+      XAxis,
+      YAxis,
+      CartesianGrid,
+      Tooltip,
+      ResponsiveContainer,
+      BarChart,
+      Bar,
+      Cell,
+      ReferenceLine
+    } = window.Recharts;
+    const HAS_RECHARTS = !window.__rechartsFallback;
+
+    const POLL_MS = 150;
+    const MAX_POINTS = 60;
+    const SERVER_URL = (() => {
+      const params = new URLSearchParams(window.location.search);
+      const explicit = params.get("api");
+      if (explicit) return explicit;
+
+      const onNodePort = window.location.protocol.startsWith("http") && window.location.port === "3000";
+      if (onNodePort) return window.location.origin;
+
+      return "http://localhost:3000";
+    })();
+
+    const pages = [
+      { id: "live", label: "Live Monitor" },
+      { id: "route", label: "Route Navigator" },
+      { id: "history", label: "Session History" },
+      { id: "settings", label: "Settings" }
+    ];
+
+    function CountUp({ value, suffix = "", decimals = 0, mono = false }) {
+      const [display, setDisplay] = React.useState(0);
+      const hasAnimated = React.useRef(false);
+
+      React.useEffect(() => {
+        const target = Number(value) || 0;
+        if (hasAnimated.current) {
+          setDisplay(target);
+          return;
+        }
+        hasAnimated.current = true;
+        const duration = 700;
+        const frameMs = 16;
+        const steps = Math.max(1, Math.floor(duration / frameMs));
+        let current = 0;
+        const step = target / steps;
+        const id = setInterval(() => {
+          current += step;
+          if (current >= target) {
+            setDisplay(target);
+            clearInterval(id);
+            return;
+          }
+          setDisplay(current);
+        }, frameMs);
+        return () => clearInterval(id);
+      }, [value]);
+
+      return (
+        <div className={"metric-value" + (mono ? " mono" : "")}>{display.toFixed(decimals)}{suffix}</div>
+      );
+    }
+
+    function SimpleLineChart({ data, maxY, threshold }) {
+      const width = 640;
+      const height = 240;
+      const left = 34;
+      const right = 10;
+      const top = 10;
+      const bottom = 212;
+      const spanX = width - left - right;
+      const spanY = bottom - top;
+      const safeData = Array.isArray(data) ? data : [];
+
+      if (safeData.length === 0) {
+        return <div style={{ height: "100%", display: "grid", placeItems: "center", color: "#9aa3b2", border: "1px dashed rgba(255,255,255,0.18)", borderRadius: 10 }}>Waiting for sensor data...</div>;
+      }
+
+      const points = safeData.map((d, i) => {
+        const x = left + (safeData.length === 1 ? spanX / 2 : (i / (safeData.length - 1)) * spanX);
+        const val = Number.isFinite(d.distance) ? d.distance : 0;
+        const y = bottom - (Math.max(0, Math.min(maxY, val)) / maxY) * spanY;
+        return `${x},${y}`;
+      }).join(" ");
+
+      const thresholdY = bottom - (Math.max(0, Math.min(maxY, threshold)) / maxY) * spanY;
+
+      return (
+        <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%" preserveAspectRatio="none">
+          <rect x={left} y={thresholdY} width={spanX} height={bottom - thresholdY} fill="rgba(239,68,68,0.12)" />
+          <line x1={left} y1={top} x2={left} y2={bottom} stroke="rgba(255,255,255,0.16)" />
+          <line x1={left} y1={bottom} x2={width - right} y2={bottom} stroke="rgba(255,255,255,0.16)" />
+          <polyline points={points} fill="none" stroke="#3b82f6" strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
+          <line x1={left} y1={thresholdY} x2={width - right} y2={thresholdY} stroke="#ef4444" strokeDasharray="5 5" strokeWidth="1.4" />
+        </svg>
+      );
+    }
+
+    function SimpleBarChart({ data, maxY, threshold }) {
+      const width = 640;
+      const height = 240;
+      const left = 34;
+      const right = 10;
+      const top = 10;
+      const bottom = 212;
+      const spanX = width - left - right;
+      const spanY = bottom - top;
+      const safeData = Array.isArray(data) ? data : [];
+
+      if (safeData.length === 0) {
+        return <div style={{ height: "100%", display: "grid", placeItems: "center", color: "#9aa3b2", border: "1px dashed rgba(255,255,255,0.18)", borderRadius: 10 }}>Waiting for sensor data...</div>;
+      }
+
+      const barSpace = spanX / safeData.length;
+      const barWidth = Math.max(3, barSpace * 0.72);
+
+      return (
+        <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%" preserveAspectRatio="none">
+          <line x1={left} y1={top} x2={left} y2={bottom} stroke="rgba(255,255,255,0.16)" />
+          <line x1={left} y1={bottom} x2={width - right} y2={bottom} stroke="rgba(255,255,255,0.16)" />
+          {safeData.map((d, i) => {
+            const val = Number.isFinite(d.water) ? d.water : 0;
+            const h = (Math.max(0, Math.min(maxY, val)) / maxY) * spanY;
+            const x = left + i * barSpace + (barSpace - barWidth) / 2;
+            const y = bottom - h;
+            const fill = val > threshold ? "#14b8a6" : "#3b82f6";
+            return <rect key={`bar-${i}`} x={x} y={y} width={barWidth} height={Math.max(1, h)} fill={fill} rx="3" />;
+          })}
+        </svg>
+      );
+    }
+
+    function MiniRoutePlot({ points }) {
+      const width = 600;
+      const height = 130;
+      const padding = 14;
+      if (!points || points.length < 2) {
+        return <div style={{ height: "100%", display: "grid", placeItems: "center", color: "#8f99b1", fontSize: "0.82rem" }}>Collecting path points...</div>;
+      }
+
+      const lats = points.map((p) => p.lat);
+      const lngs = points.map((p) => p.lng);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs);
+      const maxLng = Math.max(...lngs);
+      const latSpan = Math.max(0.00001, maxLat - minLat);
+      const lngSpan = Math.max(0.00001, maxLng - minLng);
+
+      const coords = points.map((p) => {
+        const x = padding + ((p.lng - minLng) / lngSpan) * (width - padding * 2);
+        const y = height - padding - ((p.lat - minLat) / latSpan) * (height - padding * 2);
+        return { x, y };
+      });
+
+      const poly = coords.map((p) => `${p.x},${p.y}`).join(" ");
+      const last = coords[coords.length - 1];
+
+      return (
+        <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%" preserveAspectRatio="none">
+          <rect x="0" y="0" width={width} height={height} fill="#0d111b" />
+          <polyline points={poly} fill="none" stroke="#3b82f6" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+          <circle cx={last.x} cy={last.y} r="4.2" fill="#22c55e" />
+        </svg>
+      );
+    }
+
+    function MapView({ routes, currentLat, currentLng, latestWaypoint, latestRouteIndex, isOnline }) {
+      const mapHostRef = React.useRef(null);
+      const mapRef = React.useRef(null);
+      const routeLayersRef = React.useRef(new Map());
+      const waypointLayersRef = React.useRef([]);
+      const liveMarkerRef = React.useRef(null);
+      const currentWaypointRingRef = React.useRef(null);
+      const hasFitBoundsRef = React.useRef(false);
+
+      const [activeRouteId, setActiveRouteId] = React.useState(null);
+
+      function getRecommendedRoute(list) {
+        if (!Array.isArray(list) || list.length === 0) return null;
+        return list.find((r) => r && r.mlRecommended) || list[0];
+      }
+
+      function routeByIndex(list, idx) {
+        if (!Array.isArray(list)) return null;
+        if (!Number.isFinite(idx)) return null;
+        return list[idx] || null;
+      }
+
+      function waypointColor(hazardType) {
+        if (hazardType === "obstacle") return "#f59e0b";
+        if (hazardType === "water") return "#0ea5e9";
+        return "#ffffff";
+      }
+
+      function safetyColor(score) {
+        if (score > 75) return "#22c55e";
+        if (score >= 50) return "#f59e0b";
+        return "#ef4444";
+      }
+
+      function escapeHtml(text) {
+        return String(text == null ? "" : text)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      React.useEffect(() => {
+        const routeFromLog = routeByIndex(routes, latestRouteIndex);
+        const recommended = getRecommendedRoute(routes);
+
+        if (!activeRouteId) {
+          const initial = routeFromLog || recommended;
+          if (initial && initial.id) setActiveRouteId(initial.id);
+          return;
+        }
+
+        const stillExists = Array.isArray(routes) && routes.some((r) => r && r.id === activeRouteId);
+        if (!stillExists) {
+          const fallback = routeFromLog || recommended;
+          setActiveRouteId(fallback && fallback.id ? fallback.id : null);
+        }
+      }, [routes, latestRouteIndex, activeRouteId]);
+
+      React.useEffect(() => {
+        if (!window.L || !mapHostRef.current || mapRef.current) return;
+
+        const map = window.L.map(mapHostRef.current, {
+          zoomControl: true,
+          attributionControl: true
+        });
+
+        window.L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+          maxZoom: 19,
+          attribution: "Tiles &copy; Esri"
+        }).addTo(map);
+
+        map.setView([18.520399, 73.856697], 16);
+        mapRef.current = map;
+
+        return () => {
+          map.remove();
+          mapRef.current = null;
+          routeLayersRef.current.clear();
+          waypointLayersRef.current = [];
+          liveMarkerRef.current = null;
+          currentWaypointRingRef.current = null;
+          hasFitBoundsRef.current = false;
+        };
+      }, []);
+
+      React.useEffect(() => {
+        const map = mapRef.current;
+        const L = window.L;
+        if (!map || !L) return;
+
+        routeLayersRef.current.forEach((layer) => map.removeLayer(layer));
+        routeLayersRef.current.clear();
+        waypointLayersRef.current.forEach((layer) => map.removeLayer(layer));
+        waypointLayersRef.current = [];
+        if (currentWaypointRingRef.current) {
+          map.removeLayer(currentWaypointRingRef.current);
+          currentWaypointRingRef.current = null;
+        }
+
+        const allBounds = [];
+        const activeRoute = routes.find((r) => r && r.id === activeRouteId) || routeByIndex(routes, latestRouteIndex) || getRecommendedRoute(routes);
+
+        routes.forEach((route) => {
+          if (!route) return;
+          const coords = Array.isArray(route.geometry) && route.geometry.length > 1
+            ? route.geometry
+                .filter((pair) => Array.isArray(pair) && Number.isFinite(Number(pair[0])) && Number.isFinite(Number(pair[1])))
+                .map((pair) => [Number(pair[0]), Number(pair[1])])
+            : (Array.isArray(route.waypoints) ? route.waypoints
+                .filter((wp) => Number.isFinite(Number(wp.lat)) && Number.isFinite(Number(wp.lng)))
+                .map((wp) => [Number(wp.lat), Number(wp.lng)]) : []);
+
+          if (coords.length > 0) {
+            const isRecommended = Boolean(route.mlRecommended);
+            const isActive = route.id === (activeRoute && activeRoute.id);
+            const polyline = L.polyline(coords, {
+              color: isRecommended ? "#22c55e" : (route.routeColor || "#4b5563"),
+              weight: isActive ? 7 : (isRecommended ? 6 : 4),
+              opacity: isActive ? 1 : (isRecommended ? 1 : 0.6),
+              lineCap: "round",
+              lineJoin: "round"
+            }).addTo(map);
+
+            routeLayersRef.current.set(route.id, polyline);
+            coords.forEach((pair) => allBounds.push(pair));
+          }
+
+          if (Array.isArray(route.hazardPoints)) {
+            route.hazardPoints.forEach((hp) => {
+              const lat = Number(hp.lat);
+              const lng = Number(hp.lng);
+              if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+              const color = waypointColor(hp.hazardType);
+              const marker = L.circleMarker([lat, lng], {
+                radius: hp.hazardType === "water" ? 6 : 5,
+                color,
+                weight: 2,
+                fillColor: color,
+                fillOpacity: 0.95
+              }).addTo(map);
+
+              const popup = [
+                '<div class="waypoint-popup">',
+                `<div class="title">${escapeHtml(route.name || "Route")}</div>`,
+                `<div class="instruction">${escapeHtml(hp.label || "Hazard")}</div>`,
+                `<span class="hazard-tag ${escapeHtml(hp.hazardType || "")}">${escapeHtml(hp.hazardType || "hazard")}</span>`,
+                "</div>"
+              ].join("");
+
+              marker.bindPopup(popup);
+              waypointLayersRef.current.push(marker);
+            });
+          }
+
+          if (!Array.isArray(route.waypoints)) return;
+          route.waypoints.forEach((wp) => {
+            const lat = Number(wp.lat);
+            const lng = Number(wp.lng);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+            const color = waypointColor(wp.hazardType);
+            const marker = L.circleMarker([lat, lng], {
+              radius: 8,
+              color,
+              weight: 2,
+              fillColor: color,
+              fillOpacity: 0.95
+            }).addTo(map);
+
+            const popup = [
+              '<div class="waypoint-popup">',
+              `<div class="title">${escapeHtml(wp.label || "Waypoint")}</div>`,
+              `<div class="instruction">${escapeHtml(wp.instruction || "No instruction available")}</div>`,
+              wp.hazardType
+                ? `<span class="hazard-tag ${escapeHtml(wp.hazardType)}">${escapeHtml(wp.hazardType)}${wp.hazard ? `: ${escapeHtml(wp.hazard)}` : ""}</span>`
+                : "",
+              "</div>"
+            ].join("");
+            marker.bindPopup(popup);
+            waypointLayersRef.current.push(marker);
+          });
+        });
+
+        if (activeRoute && Array.isArray(activeRoute.waypoints) && Number.isFinite(Number(latestWaypoint))) {
+          const wp = activeRoute.waypoints[Number(latestWaypoint)];
+          if (wp && Number.isFinite(Number(wp.lat)) && Number.isFinite(Number(wp.lng))) {
+            currentWaypointRingRef.current = L.marker([Number(wp.lat), Number(wp.lng)], {
+              icon: L.divIcon({
+                className: "",
+                html: '<div class="waypoint-ring"></div>',
+                iconSize: [22, 22],
+                iconAnchor: [11, 11]
+              })
+            }).addTo(map);
+          }
+        }
+
+        if (!hasFitBoundsRef.current && allBounds.length > 1) {
+          map.fitBounds(L.latLngBounds(allBounds), { padding: [36, 36] });
+          hasFitBoundsRef.current = true;
+        }
+      }, [routes, activeRouteId, latestWaypoint, latestRouteIndex]);
+
+      React.useEffect(() => {
+        const map = mapRef.current;
+        const L = window.L;
+        if (!map || !L) return;
+
+        const hasLiveFix = Number.isFinite(currentLat) && Number.isFinite(currentLng);
+        let nextPoint = null;
+
+        if (hasLiveFix) {
+          nextPoint = L.latLng(currentLat, currentLng);
+        } else {
+          const fallbackRoute = getRecommendedRoute(routes);
+          const firstWp = fallbackRoute && Array.isArray(fallbackRoute.waypoints) ? fallbackRoute.waypoints[0] : null;
+          if (firstWp && Number.isFinite(Number(firstWp.lat)) && Number.isFinite(Number(firstWp.lng))) {
+            nextPoint = L.latLng(Number(firstWp.lat), Number(firstWp.lng));
+          }
+        }
+
+        if (!nextPoint) {
+          if (liveMarkerRef.current) {
+            map.removeLayer(liveMarkerRef.current);
+            liveMarkerRef.current = null;
+          }
+          return;
+        }
+
+        if (!liveMarkerRef.current) {
+          liveMarkerRef.current = L.marker(nextPoint, {
+            icon: L.divIcon({
+              className: "",
+              html: '<div class="live-marker"></div>',
+              iconSize: [14, 14],
+              iconAnchor: [7, 7]
+            })
+          }).addTo(map);
+        } else {
+          liveMarkerRef.current.setLatLng(nextPoint);
+        }
+
+        if (hasLiveFix) {
+          const center = map.getCenter();
+          if (center.distanceTo(nextPoint) > 20) {
+            map.panTo(nextPoint, { animate: true, duration: 0.6 });
+          }
+        }
+      }, [currentLat, currentLng, routes]);
+
+      if (!window.L) {
+        return (
+          <div style={{ color: "#fca5a5", border: "1px solid rgba(239,68,68,0.45)", borderRadius: 12, padding: 12 }}>
+            Leaflet could not be loaded. Check network/CDN access for map assets.
+          </div>
+        );
+      }
+
+      return (
+        <div className="map-shell">
+          <div className="map-meta">
+            <span>{isOnline ? "Live GPS stream active" : "Offline mode: map stays interactive with route data"}</span>
+            {Number.isFinite(currentLat) && Number.isFinite(currentLng)
+              ? <span className="mono">GPS: {currentLat.toFixed(6)}, {currentLng.toFixed(6)}</span>
+              : <span className="mono">GPS: awaiting live coordinates</span>
+            }
+          </div>
+
+          <div ref={mapHostRef} className="map-canvas" />
+
+          <div className="route-info-panel">
+            {routes.map((route, idx) => {
+              const score = Number(route.safetyScore);
+              const safeScore = Number.isFinite(score) ? Math.max(0, Math.min(100, score)) : 0;
+              const isActive = route && route.id === activeRouteId;
+
+              return (
+                <div
+                  key={route.id || idx}
+                  className={`route-info-card ${isActive ? "active" : ""}`}
+                  onClick={() => setActiveRouteId(route.id)}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+                    <strong>{route.name || `Route ${idx + 1}`}</strong>
+                    <span style={{ color: "#cbd5e1", fontSize: "0.8rem" }}>Safety {safeScore}</span>
+                  </div>
+
+                  <div className="safety-track">
+                    <div className="safety-fill" style={{ width: `${safeScore}%`, background: safetyColor(safeScore) }} />
+                  </div>
+
+                  {route.mlRecommended && <span className="ml-chip">ML recommended</span>}
+
+                  <div className="route-meta-row">
+                    <span>{route.totalDistance || "-"}</span>
+                    <span>{route.estimatedTime || "-"}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    function useVoiceEngine({
+      enabled,
+      distance,
+      water,
+      waypointIndex,
+      routeIndex,
+      routes,
+      selectedRouteId,
+      sessionObstacles,
+      sessionWaterAlerts,
+      sessionMinutes,
+      obstacleThreshold,
+      waterThreshold,
+      activePage,
+      voiceRate = 0.92,
+      historyCount = 0
+    }) {
+      const enabledRef = React.useRef(enabled);
+      const distanceRef = React.useRef(distance);
+      const waterRef = React.useRef(water);
+      const waypointIndexRef = React.useRef(waypointIndex);
+      const routeIndexRef = React.useRef(routeIndex);
+      const selectedRouteIdRef = React.useRef(selectedRouteId);
+      const routesRef = React.useRef(routes);
+      const obstacleThresholdRef = React.useRef(obstacleThreshold);
+      const activePageRef = React.useRef(activePage);
+      const sessionObstaclesRef = React.useRef(sessionObstacles);
+      const sessionWaterAlertsRef = React.useRef(sessionWaterAlerts);
+      const sessionMinutesRef = React.useRef(sessionMinutes);
+      const historyCountRef = React.useRef(historyCount);
+      const waterThresholdRef = React.useRef(waterThreshold);
+      const voiceRateRef = React.useRef(voiceRate);
+      const queueRef = React.useRef([]);
+      const currentUtteranceRef = React.useRef(null);
+      const speakingRef = React.useRef(false);
+      const voiceRef = React.useRef(null);
+      const voicesRef = React.useRef([]);
+      const lastObstacleSpeechRef = React.useRef(0);
+      const lastWaterSpeechRef = React.useRef(0);
+      const previousBuzzerPatternRef = React.useRef(0);
+      const previousDistanceRef = React.useRef(null);
+      const previousWaterRef = React.useRef(0);
+      const previousWaypointRef = React.useRef(null);
+      const previousRouteIdRef = React.useRef(null);
+      const [isSpeaking, setIsSpeaking] = React.useState(false);
+
+      function resumeSpeechEngine() {
+        if (!window.speechSynthesis) return;
+        try {
+          window.speechSynthesis.resume();
+        } catch (error) {
+          // no-op
+        }
+      }
+
+      function getBuzzerPattern(distanceCm) {
+        if (!Number.isFinite(distanceCm) || distanceCm < 0) return 0;
+        if (distanceCm <= 30) return 1;
+        if (distanceCm <= 60) return 2;
+        if (distanceCm <= 100) return 3;
+        return 0;
+      }
+
+      function distanceToMetersText(distanceCm) {
+        if (!Number.isFinite(distanceCm)) return "unknown";
+        const meters = Math.max(0, distanceCm / 100);
+        return meters < 1 ? meters.toFixed(2) : meters.toFixed(1);
+      }
+
+      function updateVoiceSelection() {
+        if (!window.speechSynthesis) return;
+        resumeSpeechEngine();
+        const voices = window.speechSynthesis.getVoices();
+        voicesRef.current = Array.isArray(voices) ? voices : [];
+        voiceRef.current = voicesRef.current.find((voice) => /en-US/i.test(voice.lang)) || voicesRef.current.find((voice) => /^en/i.test(voice.lang)) || null;
+      }
+
+      function cancelSpeech() {
+        queueRef.current = [];
+        speakingRef.current = false;
+        currentUtteranceRef.current = null;
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
+        setIsSpeaking(false);
+      }
+
+      function speakNext() {
+        if (!enabledRef.current || speakingRef.current) return;
+        const next = queueRef.current.shift();
+        if (!next || !window.speechSynthesis) return;
+
+        resumeSpeechEngine();
+
+        const utter = new SpeechSynthesisUtterance(next.text);
+        utter.voice = voiceRef.current;
+        utter.lang = voiceRef.current ? voiceRef.current.lang : "en-US";
+        utter.rate = next.rate != null ? next.rate : voiceRateRef.current;
+        utter.pitch = next.pitch != null ? next.pitch : 1.05;
+        utter.volume = next.volume != null ? next.volume : 1;
+
+        speakingRef.current = true;
+        currentUtteranceRef.current = utter;
+        setIsSpeaking(true);
+
+        utter.onend = () => {
+          speakingRef.current = false;
+          currentUtteranceRef.current = null;
+          setIsSpeaking(false);
+          speakNext();
+        };
+
+        utter.onerror = () => {
+          speakingRef.current = false;
+          currentUtteranceRef.current = null;
+          setIsSpeaking(false);
+          speakNext();
+        };
+
+        window.speechSynthesis.speak(utter);
+
+        setTimeout(() => {
+          if (currentUtteranceRef.current !== utter) return;
+          if (!window.speechSynthesis.speaking) {
+            speakingRef.current = false;
+            currentUtteranceRef.current = null;
+            setIsSpeaking(false);
+            speakNext();
+          }
+        }, 2200);
+      }
+
+      function queueSpeech(text, options = {}) {
+        if (!enabledRef.current || !text) return;
+        resumeSpeechEngine();
+        const item = {
+          text,
+          rate: options.rate,
+          pitch: options.pitch,
+          volume: options.volume
+        };
+
+        if (options.interrupt) {
+          queueRef.current = [item];
+          if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+          }
+          speakingRef.current = false;
+          setIsSpeaking(false);
+          speakNext();
+          return;
+        }
+
+        if (options.priority === "high") {
+          queueRef.current.unshift(item);
+        } else {
+          queueRef.current.push(item);
+        }
+        speakNext();
+      }
+
+      function findRouteById(routeList, id) {
+        if (!Array.isArray(routeList) || !id) return null;
+        return routeList.find((route) => route && route.id === id) || null;
+      }
+
+      function getActiveRoute() {
+        return findRouteById(routesRef.current, selectedRouteIdRef.current) || routesRef.current[routeIndexRef.current] || routesRef.current[0] || null;
+      }
+
+      function speakSessionSummary() {
+        if (!enabledRef.current) return;
+        const route = getActiveRoute();
+        const routeName = route ? (route.name || "the selected route") : "the selected route";
+        const minutes = Number(sessionMinutesRef.current || 0).toFixed(1);
+        queueSpeech(
+          `Session complete. You travelled on ${routeName}. ${sessionObstaclesRef.current} obstacles were detected. ${sessionWaterAlertsRef.current} water hazards were found. Journey took ${minutes} minutes. Stay safe.`,
+          { priority: "low", rate: 0.88, pitch: 1 }
+        );
+      }
+
+      function speakDashboardDescription(pageName) {
+        if (!enabledRef.current) return;
+        const page = String(pageName || activePageRef.current || "").toLowerCase();
+        const route = getActiveRoute();
+        const routeWaypoints = route && Array.isArray(route.waypoints) ? route.waypoints : [];
+        const currentWaypoint = Number.isFinite(Number(waypointIndexRef.current)) ? routeWaypoints[Number(waypointIndexRef.current)] : null;
+        const nextWaypoint = routeWaypoints[Math.min(routeWaypoints.length - 1, (Number(waypointIndexRef.current) || 0) + 1)] || currentWaypoint;
+
+        let text = "";
+        if (page === "live") {
+          const dist = Number.isFinite(Number(distanceRef.current)) ? Math.round(Number(distanceRef.current)) : 0;
+          text = `Live Monitor page. Last obstacle distance ${dist} centimeters. ${sessionObstaclesRef.current} obstacles detected this session. ${sessionWaterAlertsRef.current} water alerts. Session running for ${Number(sessionMinutesRef.current || 0).toFixed(1)} minutes.`;
+        } else if (page === "route") {
+          const routeName = route ? (route.name || "selected route") : "selected route";
+          const label = currentWaypoint ? (currentWaypoint.label || "current waypoint") : "current waypoint";
+          const instruction = currentWaypoint ? (currentWaypoint.instruction || "No instruction available.") : (nextWaypoint ? (nextWaypoint.instruction || "No instruction available.") : "No instruction available.");
+          text = `Route Navigator page. Currently on ${routeName}. At waypoint ${label}. Next instruction: ${instruction}`;
+        } else if (page === "history") {
+          text = `Session History page. ${historyCountRef.current} total readings recorded. ${sessionObstaclesRef.current} obstacles. ${sessionWaterAlertsRef.current} water alerts.`;
+        } else if (page === "settings") {
+          const voiceState = enabledRef.current ? "enabled" : "disabled";
+          text = `Settings page. Obstacle threshold set to ${obstacleThresholdRef.current} centimeters. Water threshold set to ${waterThresholdRef.current}. Voice announcements are ${voiceState}.`;
+        } else {
+          text = `Smart blind stick dashboard. ${sessionObstaclesRef.current} obstacles detected. ${sessionWaterAlertsRef.current} water alerts. Session time ${Number(sessionMinutesRef.current || 0).toFixed(1)} minutes.`;
+        }
+
+        queueSpeech(text, { priority: "low" });
+      }
+
+      function speakText(text, options = {}) {
+        queueSpeech(text, options);
+      }
+
+      React.useEffect(() => { enabledRef.current = enabled; }, [enabled]);
+      React.useEffect(() => { distanceRef.current = distance; }, [distance]);
+      React.useEffect(() => { waterRef.current = water; }, [water]);
+      React.useEffect(() => { waypointIndexRef.current = waypointIndex; }, [waypointIndex]);
+      React.useEffect(() => { routeIndexRef.current = routeIndex; }, [routeIndex]);
+      React.useEffect(() => { selectedRouteIdRef.current = selectedRouteId; }, [selectedRouteId]);
+      React.useEffect(() => { routesRef.current = routes; }, [routes]);
+      React.useEffect(() => { obstacleThresholdRef.current = obstacleThreshold; }, [obstacleThreshold]);
+      React.useEffect(() => { activePageRef.current = activePage; }, [activePage]);
+      React.useEffect(() => { sessionObstaclesRef.current = sessionObstacles; }, [sessionObstacles]);
+      React.useEffect(() => { sessionWaterAlertsRef.current = sessionWaterAlerts; }, [sessionWaterAlerts]);
+      React.useEffect(() => { sessionMinutesRef.current = sessionMinutes; }, [sessionMinutes]);
+      React.useEffect(() => { historyCountRef.current = historyCount; }, [historyCount]);
+      React.useEffect(() => { waterThresholdRef.current = waterThreshold; }, [waterThreshold]);
+      React.useEffect(() => { voiceRateRef.current = voiceRate; }, [voiceRate]);
+
+      React.useEffect(() => {
+        if (!window.speechSynthesis) return undefined;
+        updateVoiceSelection();
+        const onVoicesChanged = () => updateVoiceSelection();
+        window.speechSynthesis.addEventListener("voiceschanged", onVoicesChanged);
+        return () => window.speechSynthesis.removeEventListener("voiceschanged", onVoicesChanged);
+      }, []);
+
+      React.useEffect(() => {
+        const unlock = () => {
+          resumeSpeechEngine();
+          updateVoiceSelection();
+        };
+        window.addEventListener("pointerdown", unlock, { passive: true });
+        window.addEventListener("keydown", unlock, { passive: true });
+        return () => {
+          window.removeEventListener("pointerdown", unlock);
+          window.removeEventListener("keydown", unlock);
+        };
+      }, []);
+
+      React.useEffect(() => {
+        if (!enabledRef.current) {
+          cancelSpeech();
+          return;
+        }
+
+        const currentDistance = Number(distance);
+        const previousDistance = previousDistanceRef.current;
+        const currentWater = Number(water);
+        const previousWater = previousWaterRef.current;
+        const currentWaypoint = Number(waypointIndex);
+        const previousWaypoint = previousWaypointRef.current;
+        const currentRouteId = findRouteById(routes, selectedRouteId)?.id || null;
+        const previousRouteId = previousRouteIdRef.current;
+        const currentRoute = findRouteById(routes, routeIndex >= 0 ? routes[routeIndex]?.id : null) || routes[routeIndex] || null;
+
+        if (Number.isFinite(currentWaypoint) && Number.isFinite(previousWaypoint) && currentWaypoint === previousWaypoint + 1) {
+          const waypoint = currentRoute && Array.isArray(currentRoute.waypoints) ? currentRoute.waypoints[currentWaypoint] : null;
+          const instruction = waypoint ? (waypoint.instruction || waypoint.label || "") : "";
+          if (instruction) {
+            queueSpeech(`Waypoint reached. ${instruction}`, { priority: "medium", rate: voiceRateRef.current });
+          }
+        }
+
+        if (currentRouteId && currentRouteId !== previousRouteId && previousRouteId !== null) {
+          const route = findRouteById(routes, currentRouteId);
+          if (route) {
+            queueSpeech(
+              `Starting ${route.name || "selected route"}. Total distance ${route.totalDistance || "unknown"}. Estimated time ${route.estimatedTime || "unknown"}. ${route.safetySummary || ""}`,
+              { priority: "low", rate: voiceRateRef.current }
+            );
+          }
+        }
+
+        previousDistanceRef.current = Number.isFinite(currentDistance) ? currentDistance : previousDistanceRef.current;
+        previousWaterRef.current = Number.isFinite(currentWater) ? currentWater : previousWaterRef.current;
+        previousWaypointRef.current = Number.isFinite(currentWaypoint) ? currentWaypoint : previousWaypointRef.current;
+        previousRouteIdRef.current = currentRouteId;
+      }, [distance, water, waypointIndex, routeIndex, routes, selectedRouteId, enabled, obstacleThreshold, voiceRate]);
+
+      React.useEffect(() => () => {
+        cancelSpeech();
+      }, []);
+
+      return {
+        speakSessionSummary,
+        speakDashboardDescription,
+        speakText,
+        isSpeaking,
+        cancelSpeech
+      };
+    }
+
+    function App() {
+      const [activePage, setActivePage] = React.useState("live");
+      const [isOnline, setIsOnline] = React.useState(false);
+      const [lastPing, setLastPing] = React.useState("--");
+      const [lastDistance, setLastDistance] = React.useState(null);
+      const [sessionObstacles, setSessionObstacles] = React.useState(0);
+      const [sessionWaterAlerts, setSessionWaterAlerts] = React.useState(0);
+      const [sessionMinutes, setSessionMinutes] = React.useState(0);
+      const [routes, setRoutes] = React.useState([]);
+      const [selectedRouteId, setSelectedRouteId] = React.useState(null);
+      const [latestWaypoint, setLatestWaypoint] = React.useState(0);
+      const [latestRouteIndex, setLatestRouteIndex] = React.useState(0);
+      const [events, setEvents] = React.useState([]);
+      const [lastEventId, setLastEventId] = React.useState(null);
+      const [historyRows, setHistoryRows] = React.useState([]);
+      const [sortDesc, setSortDesc] = React.useState(true);
+      const [obstacleThreshold, setObstacleThreshold] = React.useState(80);
+      const [waterThreshold, setWaterThreshold] = React.useState(1500);
+      const [buzzerEnabled, setBuzzerEnabled] = React.useState(true);
+      const [voiceEnabled, setVoiceEnabled] = React.useState(true);
+      const [voicePrimed, setVoicePrimed] = React.useState(false);
+      const [voiceRate, setVoiceRate] = React.useState(0.9);
+      const [buzzerFlash, setBuzzerFlash] = React.useState(false);
+      const [livePulse, setLivePulse] = React.useState(false);
+      const [currentLat, setCurrentLat] = React.useState(null);
+      const [currentLng, setCurrentLng] = React.useState(null);
+      const [routeTrail, setRouteTrail] = React.useState([]);
+      const speechSupported = typeof window !== "undefined" && typeof window.speechSynthesis !== "undefined" && typeof window.SpeechSynthesisUtterance !== "undefined";
+
+      const sessionStartRef = React.useRef(Date.now());
+      const processedCountRef = React.useRef(0);
+      const lastProcessedEntryKeyRef = React.useRef("");
+      const prevObstacleDangerRef = React.useRef(false);
+      const prevWaterActiveRef = React.useRef(false);
+      const lastObstacleVoiceRef = React.useRef(0);
+      const lastWaterVoiceRef = React.useRef(0);
+      const routesRef = React.useRef([]);
+      const obstacleThresholdRef = React.useRef(80);
+      const waterThresholdRef = React.useRef(1500);
+      const buzzerEnabledRef = React.useRef(true);
+      const distancePointsRef = React.useRef([]);
+      const waterPointsRef = React.useRef([]);
+      const [distanceData, setDistanceData] = React.useState([]);
+      const [waterData, setWaterData] = React.useState([]);
+      const [navStartName, setNavStartName] = React.useState("18.527297,73.851108");
+      const [navEndName, setNavEndName] = React.useState("18.5246 N, 73.8415 E");
+      const [navStartCoord, setNavStartCoord] = React.useState(null);
+      const [navEndCoord, setNavEndCoord] = React.useState(null);
+      const [navigatorRoutes, setNavigatorRoutes] = React.useState([]);
+      const [navResolving, setNavResolving] = React.useState(false);
+      const [navError, setNavError] = React.useState("");
+
+      const selectedRoute = routes.find((r) => r.id === selectedRouteId) || routes[0] || null;
+
+      function haversineKm(a, b) {
+        const toRad = (deg) => (deg * Math.PI) / 180;
+        const lat1 = Number(a.lat);
+        const lng1 = Number(a.lng);
+        const lat2 = Number(b.lat);
+        const lng2 = Number(b.lng);
+        const dLat = toRad(lat2 - lat1);
+        const dLng = toRad(lng2 - lng1);
+        const aa = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        const c = 2 * Math.atan2(Math.sqrt(aa), Math.sqrt(1 - aa));
+        return 6371 * c;
+      }
+
+      function formatDistanceKm(km) {
+        return `${km.toFixed(2)} km`;
+      }
+
+      function formatEtaMinutes(km) {
+        const walkingSpeedKmh = 4;
+        const minutes = Math.max(1, Math.round((km / walkingSpeedKmh) * 60));
+        return `${minutes} min`;
+      }
+
+      function geometryDistanceKm(geometry) {
+        if (!Array.isArray(geometry) || geometry.length < 2) return 0;
+        let total = 0;
+        for (let i = 1; i < geometry.length; i += 1) {
+          const prev = geometry[i - 1];
+          const curr = geometry[i];
+          total += haversineKm({ lat: Number(prev[0]), lng: Number(prev[1]) }, { lat: Number(curr[0]), lng: Number(curr[1]) });
+        }
+        return total;
+      }
+
+      function metersToLatLngOffset(lat, lng, northMeters, eastMeters) {
+        const latOffset = northMeters / 110540;
+        const lngOffset = eastMeters / (111320 * Math.cos((lat * Math.PI) / 180));
+        return { lat: lat + latOffset, lng: lng + lngOffset };
+      }
+
+      function offsetRouteGeometry(baseGeometry, offsetMeters) {
+        if (!Array.isArray(baseGeometry) || baseGeometry.length < 2) return [];
+
+        const first = baseGeometry[0];
+        const last = baseGeometry[baseGeometry.length - 1];
+        const startLat = Number(first[0]);
+        const startLng = Number(first[1]);
+        const endLat = Number(last[0]);
+        const endLng = Number(last[1]);
+
+        const dx = (endLng - startLng) * 111320 * Math.cos(((startLat + endLat) / 2) * Math.PI / 180);
+        const dy = (endLat - startLat) * 110540;
+        const len = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+        const nx = (-dy / len) * offsetMeters;
+        const ny = (dx / len) * offsetMeters;
+
+        return baseGeometry.map((pair) => {
+          const lat = Number(pair[0]);
+          const lng = Number(pair[1]);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return pair;
+          return [metersToLatLngOffset(lat, lng, ny, nx).lat, metersToLatLngOffset(lat, lng, ny, nx).lng];
+        });
+      }
+
+      function buildNavigatorRoutes(startCoord, endCoord, routeGeometries) {
+        const templates = [
+          { id: "sim_route_a", name: "Route A", obstacleCount: 12, waterPotholesCount: 5, routeColor: "#60a5fa" },
+          { id: "sim_route_b", name: "Route B", obstacleCount: 4, waterPotholesCount: 1, routeColor: "#22c55e" },
+          { id: "sim_route_c", name: "Route C", obstacleCount: 6, waterPotholesCount: 3, routeColor: "#a855f7" }
+        ];
+
+        const startLat = Number(startCoord.lat);
+        const startLng = Number(startCoord.lng);
+        const endLat = Number(endCoord.lat);
+        const endLng = Number(endCoord.lng);
+        const baseGeometry = Array.isArray(routeGeometries) && routeGeometries.length > 0 && Array.isArray(routeGeometries[0])
+          ? routeGeometries[0]
+          : [[startLat, startLng], [((startLat + endLat) / 2), ((startLng + endLng) / 2)], [endLat, endLng]];
+        const allGeometries = Array.isArray(routeGeometries) && routeGeometries.length > 0
+          ? routeGeometries
+          : [baseGeometry];
+
+        return templates.map((tpl, idx) => {
+          const fallbackOffsets = [220, 0, -220, 360];
+          const selectedGeometry = allGeometries[idx] || offsetRouteGeometry(baseGeometry, fallbackOffsets[idx] ?? 180);
+          const routeGeometry = Array.isArray(selectedGeometry) && selectedGeometry.length > 1 ? selectedGeometry : baseGeometry;
+          const routeKm = Math.max(0.05, geometryDistanceKm(routeGeometry));
+          const obstacleCount = Math.max(0, Number(tpl.obstacleCount));
+          const waterPotholesCount = Math.max(0, Number(tpl.waterPotholesCount));
+          const hazardTotal = obstacleCount + waterPotholesCount;
+          const midPoint = routeGeometry[Math.floor(routeGeometry.length / 2)] || [((startLat + endLat) / 2), ((startLng + endLng) / 2)];
+
+          const hazardPoints = [];
+
+          const geometryLen = routeGeometry.length;
+          const totalHazards = obstacleCount + waterPotholesCount;
+          const span = Math.max(1, geometryLen - 2);
+          const step = Math.max(1, Math.floor(span / Math.max(1, totalHazards)));
+
+          for (let i = 0; i < obstacleCount; i += 1) {
+            const pointIndex = Math.min(geometryLen - 2, 1 + (i * step));
+            const pair = routeGeometry[pointIndex] || routeGeometry[geometryLen - 1] || routeGeometry[0];
+            hazardPoints.push({
+              id: `${tpl.id}_obstacle_${i + 1}`,
+              hazardType: "obstacle",
+              label: `Obstacle ${i + 1}`,
+              lat: Number(pair[0]),
+              lng: Number(pair[1])
+            });
+          }
+
+          for (let i = 0; i < waterPotholesCount; i += 1) {
+            const pointIndex = Math.min(geometryLen - 2, 1 + ((obstacleCount + i) * step));
+            const pair = routeGeometry[pointIndex] || routeGeometry[geometryLen - 1] || routeGeometry[0];
+            hazardPoints.push({
+              id: `${tpl.id}_water_${i + 1}`,
+              hazardType: "water",
+              label: `Water pothole ${i + 1}`,
+              lat: Number(pair[0]),
+              lng: Number(pair[1])
+            });
+          }
+
+          return {
+            id: tpl.id,
+            name: tpl.name,
+            routeColor: tpl.routeColor,
+            routeType: idx < allGeometries.length ? `Road Option ${idx + 1}` : `Alternative Option ${idx + 1}`,
+            obstacleCount,
+            waterPotholesCount,
+            hazardTotal,
+            totalDistance: formatDistanceKm(routeKm),
+            estimatedTime: formatEtaMinutes(routeKm),
+            geometry: routeGeometry,
+            hazardPoints,
+            waypoints: [
+              { id: `${tpl.id}_start`, label: "Start", instruction: `Start from ${navStartName}.`, lat: startLat, lng: startLng },
+              { id: `${tpl.id}_mid`, label: `Segment ${idx + 1}`, instruction: `Continue on ${tpl.name}.`, lat: Number(midPoint[0]), lng: Number(midPoint[1]), hazardType: hazardTotal > 0 ? "obstacle" : null },
+              { id: `${tpl.id}_end`, label: "Destination", instruction: `Arrive at ${navEndName}.`, lat: endLat, lng: endLng }
+            ]
+          };
+        });
+      }
+
+      function parseCoordinateInput(text) {
+        const value = String(text || "").trim();
+
+        const decimalMatch = value.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+        if (decimalMatch) {
+          const lat = Number(decimalMatch[1]);
+          const lng = Number(decimalMatch[2]);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+          return { lat, lng, displayName: value };
+        }
+
+        const degreeMatch = value.match(/^\s*(\d+(?:\.\d+)?)\s*°?\s*([NS])?\s*,\s*(\d+(?:\.\d+)?)\s*°?\s*([EW])?\s*$/i);
+        if (!degreeMatch) return null;
+
+        let lat = Number(degreeMatch[1]);
+        let lng = Number(degreeMatch[3]);
+        const latDir = String(degreeMatch[2] || "N").toUpperCase();
+        const lngDir = String(degreeMatch[4] || "E").toUpperCase();
+        if (latDir === "S") lat *= -1;
+        if (lngDir === "W") lng *= -1;
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+        return { lat, lng, displayName: value };
+      }
+
+      async function geocodeLocation(query) {
+        const parsed = parseCoordinateInput(query);
+        if (parsed) return parsed;
+
+        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`;
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error("Location lookup failed");
+        const rows = await res.json();
+        if (!Array.isArray(rows) || rows.length === 0) throw new Error(`Location not found: ${query}`);
+        const first = rows[0];
+        return {
+          lat: Number(first.lat),
+          lng: Number(first.lon),
+          displayName: first.display_name || query
+        };
+      }
+
+      async function fetchExactRouteGeometry(startCoord, endCoord) {
+        const startLat = Number(startCoord.lat);
+        const startLng = Number(startCoord.lng);
+        const endLat = Number(endCoord.lat);
+        const endLng = Number(endCoord.lng);
+
+        function toLatLngGeometry(routeObj) {
+          const coords = routeObj && routeObj.geometry && Array.isArray(routeObj.geometry.coordinates) ? routeObj.geometry.coordinates : [];
+          if (!coords.length) return [];
+          return coords.map((pair) => [Number(pair[1]), Number(pair[0])]);
+        }
+
+        function geometryKey(geometry) {
+          if (!Array.isArray(geometry) || geometry.length < 2) return "";
+          const picks = [geometry[0], geometry[Math.floor(geometry.length / 2)], geometry[geometry.length - 1]];
+          return picks.map((p) => `${Number(p[0]).toFixed(5)},${Number(p[1]).toFixed(5)}`).join("|");
+        }
+
+        async function fetchRouteByCoords(coordPairs, allowAlternatives = false) {
+          const path = coordPairs.map((p) => `${Number(p.lng)},${Number(p.lat)}`).join(";");
+          const url = `https://router.project-osrm.org/route/v1/driving/${path}?overview=full&geometries=geojson&alternatives=${allowAlternatives ? "true" : "false"}&steps=false`;
+          const res = await fetch(url, { cache: "no-store" });
+          if (!res.ok) return [];
+          const payload = await res.json();
+          const list = payload && Array.isArray(payload.routes) ? payload.routes : [];
+          return list.map(toLatLngGeometry).filter((g) => Array.isArray(g) && g.length > 1);
+        }
+
+        const directRoutes = await fetchRouteByCoords([
+          { lat: startLat, lng: startLng },
+          { lat: endLat, lng: endLng }
+        ], true);
+
+        const geometries = [];
+        const seen = new Set();
+
+        function pushUnique(list) {
+          list.forEach((g) => {
+            const key = geometryKey(g);
+            if (!key || seen.has(key)) return;
+            seen.add(key);
+            geometries.push(g);
+          });
+        }
+
+        pushUnique(directRoutes);
+
+        const midLat = (startLat + endLat) / 2;
+        const midLng = (startLng + endLng) / 2;
+        const dx = (endLng - startLng) * 111320 * Math.cos(((startLat + endLat) / 2) * Math.PI / 180);
+        const dy = (endLat - startLat) * 110540;
+        const len = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+        const perpEast = -dy / len;
+        const perpNorth = dx / len;
+
+        const viaLeft = metersToLatLngOffset(midLat, midLng, perpNorth * 150, perpEast * 150);
+        const viaRight = metersToLatLngOffset(midLat, midLng, -perpNorth * 150, -perpEast * 150);
+
+        const [leftRoutes, rightRoutes] = await Promise.all([
+          fetchRouteByCoords([{ lat: startLat, lng: startLng }, viaLeft, { lat: endLat, lng: endLng }], false),
+          fetchRouteByCoords([{ lat: startLat, lng: startLng }, viaRight, { lat: endLat, lng: endLng }], false)
+        ]);
+
+        pushUnique(leftRoutes);
+        pushUnique(rightRoutes);
+
+        if (!geometries.length) throw new Error("Exact route geometry unavailable");
+        return geometries.slice(0, 4);
+      }
+
+      async function resolveNavigatorLocations() {
+        const fromText = String(navStartName || "").trim();
+        const toText = String(navEndName || "").trim();
+        if (!fromText || !toText) {
+          setNavError("Please enter both start and destination locations.");
+          return;
+        }
+
+        try {
+          setNavResolving(true);
+          setNavError("");
+          const [fromCoord, toCoord] = await Promise.all([geocodeLocation(fromText), geocodeLocation(toText)]);
+          const exactRouteGeometry = await fetchExactRouteGeometry(fromCoord, toCoord);
+          setNavStartCoord(fromCoord);
+          setNavEndCoord(toCoord);
+          setNavigatorRoutes(buildNavigatorRoutes(fromCoord, toCoord, exactRouteGeometry));
+        } catch (error) {
+          setNavError(error && error.message ? error.message : "Unable to resolve locations.");
+        } finally {
+          setNavResolving(false);
+        }
+      }
+
+      const simulatedRoutes = navigatorRoutes;
+      const safestSimRoute = React.useMemo(() => {
+        if (!simulatedRoutes.length) return null;
+        return simulatedRoutes.reduce((best, route) => {
+          if (!best) return route;
+            const routeHazards = Number(route.hazardTotal ?? (route.obstacleCount + route.waterPotholesCount));
+            const bestHazards = Number(best.hazardTotal ?? (best.obstacleCount + best.waterPotholesCount));
+          if (routeHazards !== bestHazards) return routeHazards < bestHazards ? route : best;
+          return route.obstacleCount < best.obstacleCount ? route : best;
+        }, null);
+      }, [simulatedRoutes]);
+      const routeSafetySignature = React.useMemo(() => simulatedRoutes.map((route) => `${route.id}:${route.obstacleCount}:${route.waterPotholesCount}`).join("|"), [simulatedRoutes]);
+      const mapSimulatedRoutes = React.useMemo(() => simulatedRoutes.map((route) => {
+        const isSafest = safestSimRoute && route.id === safestSimRoute.id;
+        const hazardScore = Number(route.hazardTotal ?? (Number(route.obstacleCount || 0) + Number(route.waterPotholesCount || 0)));
+        const score = Math.max(0, Math.min(100, 100 - (hazardScore * 10)));
+        return {
+          ...route,
+          mlRecommended: Boolean(isSafest),
+          safetyScore: score,
+          safetySummary: isSafest ? (route.routeType || "Safest route selected") : "Alternative route"
+        };
+      }), [simulatedRoutes, safestSimRoute]);
+      const safestMapIndex = React.useMemo(() => {
+        if (!safestSimRoute) return 0;
+        const idx = mapSimulatedRoutes.findIndex((route) => route.id === safestSimRoute.id);
+        return idx >= 0 ? idx : 0;
+      }, [mapSimulatedRoutes, safestSimRoute]);
+
+      const {
+        speakSessionSummary,
+        speakDashboardDescription,
+        speakText,
+        isSpeaking,
+        cancelSpeech
+      } = useVoiceEngine({
+        enabled: voiceEnabled && speechSupported,
+        distance: lastDistance,
+        water: waterData.length > 0 ? waterData[waterData.length - 1].water : 0,
+        waypointIndex: latestWaypoint,
+        routeIndex: latestRouteIndex,
+        routes,
+        selectedRouteId,
+        sessionObstacles,
+        sessionWaterAlerts,
+        sessionMinutes,
+        obstacleThreshold,
+        waterThreshold,
+        activePage,
+        voiceRate,
+        historyCount: historyRows.length
+      });
+      const lastSafestRouteAnnouncementRef = React.useRef("");
+
+      React.useEffect(() => {
+        if (navigatorRoutes.length > 0) return;
+        resolveNavigatorLocations();
+      }, []);
+
+      React.useEffect(() => {
+        if (activePage !== "route" || !safestSimRoute) return;
+
+        const recommendation = `The safest route from ${navStartName} to ${navEndName} has been selected. Please follow ${safestSimRoute.name}.`;
+        console.log(`[Route Navigator] ${recommendation}`);
+
+        if (!voiceEnabled || !speechSupported || typeof speakText !== "function") return;
+        const announcementKey = `${recommendation}|${routeSafetySignature}`;
+        if (lastSafestRouteAnnouncementRef.current === announcementKey) return;
+
+        speakText(recommendation, { priority: "medium", rate: 0.92, pitch: 1.02 });
+        lastSafestRouteAnnouncementRef.current = announcementKey;
+      }, [activePage, safestSimRoute, voiceEnabled, speechSupported, speakText, navStartName, navEndName, routeSafetySignature]);
+
+      function primeVoiceEngine() {
+        if (!speechSupported) return;
+        try {
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+        } catch (error) {
+          // no-op
+        }
+
+        const unlock = new SpeechSynthesisUtterance("Voice enabled");
+        unlock.rate = 1;
+        unlock.pitch = 1;
+        unlock.volume = 1;
+        unlock.lang = "en-US";
+        unlock.onstart = () => {
+          setVoicePrimed(true);
+        };
+        unlock.onend = () => {
+          setVoicePrimed(true);
+        };
+        unlock.onerror = () => {
+          setVoicePrimed(true);
+        };
+        window.speechSynthesis.speak(unlock);
+      }
+
+      function speakTestVoice() {
+        if (!speechSupported || !window.speechSynthesis) {
+          alert("Speech not supported on this browser");
+          return;
+        }
+        if (!voiceEnabled) {
+          alert("Enable voice toggle first in Settings");
+          return;
+        }
+        speakImmediate("Test voice. Obstacle and water alerts active.", 0.95);
+      }
+
+      React.useEffect(() => {
+        const id = setInterval(() => {
+          setSessionMinutes((Date.now() - sessionStartRef.current) / 60000);
+        }, 1000);
+        return () => clearInterval(id);
+      }, []);
+
+      React.useEffect(() => {
+        routesRef.current = routes;
+      }, [routes]);
+
+      React.useEffect(() => {
+        obstacleThresholdRef.current = obstacleThreshold;
+      }, [obstacleThreshold]);
+
+      React.useEffect(() => {
+        waterThresholdRef.current = waterThreshold;
+      }, [waterThreshold]);
+
+      React.useEffect(() => {
+        buzzerEnabledRef.current = buzzerEnabled;
+      }, [buzzerEnabled]);
+
+      React.useEffect(() => {
+        fetchRoutes();
+        pollLog();
+        pollLatest();
+        const latestPollId = setInterval(pollLatest, POLL_MS);
+        const logSyncId = setInterval(pollLog, 3000);
+        return () => {
+          clearInterval(latestPollId);
+          clearInterval(logSyncId);
+        };
+      }, []);
+
+      React.useEffect(() => {
+        if (!selectedRouteId && routes.length > 0) {
+          setSelectedRouteId(routes[0].id);
+        }
+      }, [routes, selectedRouteId]);
+
+      React.useEffect(() => {
+        if (!speechSupported) return undefined;
+        const unlockOnFirstTouch = () => {
+          if (!voiceEnabled || voicePrimed) return;
+          primeVoiceEngine();
+        };
+        window.addEventListener("pointerdown", unlockOnFirstTouch, { passive: true, once: true });
+        return () => {
+          window.removeEventListener("pointerdown", unlockOnFirstTouch);
+        };
+      }, [voiceEnabled, voicePrimed, speechSupported]);
+
+      function pushRolling(refArr, item) {
+        refArr.current.push(item);
+        if (refArr.current.length > MAX_POINTS) {
+          refArr.current.shift();
+        }
+      }
+
+      function pushEvent(type, message, time) {
+        const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+        const event = { id, type, message, time };
+        setEvents((prev) => {
+          const next = [event, ...prev];
+          return next.slice(0, 20);
+        });
+        setLastEventId(id);
+      }
+
+      function triggerAlertUI() {
+        setLivePulse(true);
+        setTimeout(() => setLivePulse(false), 1600);
+      }
+
+      function triggerBuzzerVisual() {
+        if (!buzzerEnabledRef.current) return;
+        setBuzzerFlash(true);
+        setTimeout(() => setBuzzerFlash(false), 650);
+      }
+
+      function getBuzzerPattern(distanceCm) {
+        if (!Number.isFinite(distanceCm) || distanceCm < 0) return 0;
+        if (distanceCm <= 30) return 1;
+        if (distanceCm <= 60) return 2;
+        if (distanceCm <= 100) return 3;
+        return 0;
+      }
+
+      function distanceToMetersText(distanceCm) {
+        if (!Number.isFinite(distanceCm)) return "unknown";
+        const meters = Math.max(0, distanceCm / 100);
+        return meters < 1 ? meters.toFixed(2) : meters.toFixed(1);
+      }
+
+      function getEntryKey(entry) {
+        if (!entry || typeof entry !== "object") return "";
+        const t = entry.time || "";
+        const d = Number(entry.distance);
+        const w = Number(entry.water);
+        const r = Number(entry.route);
+        const wp = Number(entry.waypoint);
+        return `${t}|${d}|${w}|${r}|${wp}`;
+      }
+
+      function speakImmediate(text, rate = 0.92) {
+        if (!text || !speechSupported || !window.speechSynthesis) return;
+        if (!voiceEnabled) return;
+
+        try {
+          const ss = window.speechSynthesis;
+          if (ss.paused) ss.resume();
+          if (ss.speaking) ss.cancel();
+        } catch (error) {
+          // no-op
+        }
+
+        setTimeout(() => {
+          try {
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.rate = rate;
+            utter.pitch = 1.02;
+            utter.lang = "en-US";
+            utter.volume = 1;
+            utter.onstart = () => setVoicePrimed(true);
+            utter.onend = () => setVoicePrimed(true);
+            utter.onerror = () => setVoicePrimed(true);
+            window.speechSynthesis.speak(utter);
+          } catch (error) {
+            setVoicePrimed(true);
+          }
+        }, 5);
+      }
+
+      function speakObstacleNow(distanceCm) {
+        if (!voiceEnabled || !speechSupported) return;
+        const now = Date.now();
+        if (now - lastObstacleVoiceRef.current < 500) return;
+
+        const pattern = getBuzzerPattern(distanceCm);
+        if (pattern === 0) return;
+
+        let text = "";
+        if (pattern === 1) text = `Obstacle detected. ${distanceToMetersText(distanceCm)} meters ahead. Stop now.`;
+        else if (pattern === 2) text = `Obstacle detected. ${distanceToMetersText(distanceCm)} meters ahead. Slow down.`;
+        else text = `Obstacle detected. ${distanceToMetersText(distanceCm)} meters ahead.`;
+
+        speakImmediate(text, 0.95);
+        lastObstacleVoiceRef.current = now;
+      }
+
+      function speakWaterNow() {
+        if (!voiceEnabled || !speechSupported) return;
+        const now = Date.now();
+        if (now - lastWaterVoiceRef.current < 800) return;
+        speakImmediate("Water detected. Proceed carefully.", 0.95);
+        lastWaterVoiceRef.current = now;
+      }
+
+      function processEntry(entry, routeList) {
+        const time = entry.time || new Date().toLocaleTimeString();
+        const distance = Number(entry.distance);
+        const water = Number(entry.water);
+        const waypoint = Number(entry.waypoint);
+        const routeIndex = Number(entry.route);
+        const lat = Number(entry.lat);
+        const lng = Number(entry.lng);
+
+        const safeDistance = Number.isFinite(distance) ? Math.max(0, Math.min(400, distance)) : 0;
+
+        pushRolling(distancePointsRef, { time, distance: safeDistance });
+        pushRolling(waterPointsRef, { time, water });
+        setDistanceData([...distancePointsRef.current]);
+        setWaterData([...waterPointsRef.current]);
+
+        if (Number.isFinite(distance)) {
+          setLastDistance(Math.round(distance));
+          speakObstacleNow(distance);
+        }
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          setCurrentLat(lat);
+          setCurrentLng(lng);
+          setRouteTrail((prev) => {
+            const next = [...prev, { lat, lng, time }];
+            if (next.length > 80) next.shift();
+            return next;
+          });
+        }
+        if (Number.isFinite(waypoint)) setLatestWaypoint(waypoint);
+        if (Number.isFinite(routeIndex)) setLatestRouteIndex(routeIndex);
+
+        const obstacleNow = Number.isFinite(distance) && distance < obstacleThresholdRef.current;
+        const waterNow = water === 1;
+
+        if (obstacleNow && !prevObstacleDangerRef.current) {
+          setSessionObstacles((v) => v + 1);
+          pushEvent("obstacle", `Object at ${Math.round(distance)} cm`, time);
+          triggerAlertUI();
+          triggerBuzzerVisual();
+        }
+
+        if (waterNow && !prevWaterActiveRef.current) {
+          setSessionWaterAlerts((v) => v + 1);
+          pushEvent("water", "Water detected", time);
+          triggerAlertUI();
+          triggerBuzzerVisual();
+          speakWaterNow();
+        }
+
+        prevObstacleDangerRef.current = obstacleNow;
+        prevWaterActiveRef.current = waterNow;
+
+        const routeObj = routeList[routeIndex] || null;
+        const wpObj = routeObj && Array.isArray(routeObj.waypoints) ? routeObj.waypoints[waypoint] : null;
+        setHistoryRows((prev) => ([
+          ...prev,
+          {
+            time,
+            distance: Number.isFinite(distance) ? distance : null,
+            water,
+            lat: entry.lat,
+            lng: entry.lng,
+            routeIndex,
+            routeName: routeObj ? routeObj.name : `Route ${Number.isFinite(routeIndex) ? routeIndex : "-"}`,
+            waypointIndex: waypoint,
+            waypointLabel: wpObj ? wpObj.label : "-"
+          }
+        ]));
+      }
+
+      async function fetchRoutes() {
+        try {
+          const res = await fetch(`${SERVER_URL}/routes`, { cache: "no-store" });
+          if (!res.ok) throw new Error("Routes fetch failed");
+          const payload = await res.json();
+          const routeRows = Array.isArray(payload) ? payload : (Array.isArray(payload.routes) ? payload.routes : []);
+          setRoutes(routeRows);
+          if (routeRows.length > 0 && !selectedRouteId) {
+            setSelectedRouteId(routeRows[0].id);
+          }
+        } catch (err) {
+          setRoutes([]);
+        }
+      }
+
+      async function pollLog() {
+        try {
+          const res = await fetch(`${SERVER_URL}/log`, { cache: "no-store" });
+          if (!res.ok) throw new Error("Log fetch failed");
+          const rows = await res.json();
+          if (!Array.isArray(rows)) throw new Error("Invalid payload");
+
+          setIsOnline(true);
+
+          if (rows.length < processedCountRef.current) {
+            processedCountRef.current = 0;
+            prevObstacleDangerRef.current = false;
+            prevWaterActiveRef.current = false;
+            setHistoryRows([]);
+          }
+
+          const activeRoutes = routesRef.current.length ? routesRef.current : [];
+          const newRows = rows.slice(processedCountRef.current);
+          newRows.forEach((entry) => processEntry(entry, activeRoutes));
+          processedCountRef.current = rows.length;
+
+          if (rows.length > 0) {
+            const latest = rows[rows.length - 1];
+            setLastPing(latest.time || new Date().toLocaleTimeString());
+            lastProcessedEntryKeyRef.current = getEntryKey(latest);
+          }
+        } catch (err) {
+          setIsOnline(false);
+        }
+      }
+
+      async function pollLatest() {
+        try {
+          const res = await fetch(`${SERVER_URL}/latest`, { cache: "no-store" });
+          if (!res.ok) throw new Error("Latest fetch failed");
+          const latest = await res.json();
+          if (!latest || typeof latest !== "object") return;
+
+          const key = getEntryKey(latest);
+          if (!key || key === lastProcessedEntryKeyRef.current) {
+            setIsOnline(true);
+            return;
+          }
+
+          const activeRoutes = routesRef.current.length ? routesRef.current : [];
+          processEntry(latest, activeRoutes);
+          lastProcessedEntryKeyRef.current = key;
+          setLastPing(latest.time || new Date().toLocaleTimeString());
+          setIsOnline(true);
+        } catch (err) {
+          setIsOnline(false);
+        }
+      }
+
+      function manualReconnect() {
+        fetchRoutes();
+        pollLog();
+        pollLatest();
+      }
+
+      function buildOsmEmbedUrl(lat, lng) {
+        const pad = 0.0045;
+        const left = (lng - pad).toFixed(6);
+        const right = (lng + pad).toFixed(6);
+        const top = (lat + pad).toFixed(6);
+        const bottom = (lat - pad).toFixed(6);
+        const markerLat = lat.toFixed(6);
+        const markerLng = lng.toFixed(6);
+        return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${markerLat}%2C${markerLng}`;
+      }
+
+      function routeByIndex(idx) {
+        if (!Number.isFinite(idx)) return null;
+        return routes[idx] || null;
+      }
+
+      function renderTimeline(route) {
+        if (!route || !Array.isArray(route.waypoints) || route.waypoints.length === 0) {
+          return <div className="card" style={{ color: "var(--muted)" }}>No waypoints available.</div>;
+        }
+
+        const liveRoute = routeByIndex(latestRouteIndex);
+        const routeMatchesLive = liveRoute && route.id === liveRoute.id;
+        const routeMatchesSelected = selectedRoute && route.id === selectedRoute.id;
+        const currentWp = (routeMatchesLive || (!liveRoute && routeMatchesSelected)) ? latestWaypoint : -1;
+
+        return (
+          <div className="timeline">
+            {route.waypoints.map((wp, idx) => {
+              let status = "upcoming";
+              if (idx < currentWp) status = "done";
+              if (idx === currentWp) status = "current";
+
+              return (
+                <div className="timeline-item" key={wp.id || `${route.id}_${idx}`}>
+                  <span className={`status-dot ${status}`} />
+                  <div>
+                    <div className="timeline-top">
+                      <strong>{wp.label || `Waypoint ${idx + 1}`}</strong>
+                      {wp.hazardType && (
+                        <span className={`badge ${wp.hazardType === "water" ? "water" : "obstacle"}`}>
+                          {wp.hazardType}
+                        </span>
+                      )}
+                    </div>
+                    <div className="timeline-distance mono">{wp.distanceFromStart || "-"} from start</div>
+                    <p className="timeline-instruction">{wp.instruction || "No instruction available."}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+
+      function exportCsv() {
+        if (historyRows.length === 0) return;
+        const headers = ["time", "distance", "water", "lat", "lng", "route", "routeName", "waypoint", "waypointLabel"];
+        const lines = [headers.join(",")];
+        historyRows.forEach((row) => {
+          const vals = [
+            row.time,
+            row.distance,
+            row.water,
+            row.lat,
+            row.lng,
+            row.routeIndex,
+            row.routeName,
+            row.waypointIndex,
+            row.waypointLabel
+          ].map((v) => {
+            const str = v == null ? "" : String(v);
+            return `"${str.replace(/"/g, '""')}"`;
+          });
+          lines.push(vals.join(","));
+        });
+
+        const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `session_log_${Date.now()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function sortedHistory() {
+        function parseTimeValue(t) {
+          if (!t) return 0;
+          const normalized = String(t).trim();
+          const ampmMatch = normalized.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)$/i);
+          if (ampmMatch) {
+            let h = Number(ampmMatch[1]);
+            const m = Number(ampmMatch[2]);
+            const s = Number(ampmMatch[3] || 0);
+            const marker = ampmMatch[4].toUpperCase();
+            if (marker === "PM" && h < 12) h += 12;
+            if (marker === "AM" && h === 12) h = 0;
+            return h * 3600 + m * 60 + s;
+          }
+
+          const basic = normalized.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+          if (basic) {
+            const h = Number(basic[1]);
+            const m = Number(basic[2]);
+            const s = Number(basic[3] || 0);
+            return h * 3600 + m * 60 + s;
+          }
+
+          const asDate = Date.parse(normalized);
+          return Number.isNaN(asDate) ? 0 : asDate;
+        }
+
+        const copy = [...historyRows];
+        copy.sort((a, b) => {
+          const na = parseTimeValue(a.time);
+          const nb = parseTimeValue(b.time);
+          return sortDesc ? nb - na : na - nb;
+        });
+        return copy;
+      }
+
+      function NavIcon({ name }) {
+        const style = { width: 16, height: 16, stroke: "currentColor", fill: "none", strokeWidth: 1.8 };
+        if (name === "live") return <svg viewBox="0 0 24 24" style={style}><path d="M4 12h16" /><path d="M12 4v16" /><circle cx="12" cy="12" r="9" /></svg>;
+        if (name === "route") return <svg viewBox="0 0 24 24" style={style}><path d="M6 19V5" /><circle cx="6" cy="5" r="2" /><circle cx="18" cy="19" r="2" /><path d="M8 5h8a2 2 0 0 1 2 2v10" /></svg>;
+        if (name === "history") return <svg viewBox="0 0 24 24" style={style}><path d="M4 5h16v14H4z" /><path d="M8 9h8M8 13h8M8 17h5" /></svg>;
+        return <svg viewBox="0 0 24 24" style={style}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 0 1-4 0v-.2a1 1 0 0 0-.7-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 0 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 0 1 0-4h.2a1 1 0 0 0 .9-.7 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 0 1 4 0v.2a1 1 0 0 0 .6.9 1 1 0 0 0 1.1-.2l.1-.1a2 2 0 0 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 0 1 0 4h-.2a1 1 0 0 0-.9.6z" /></svg>;
+      }
+
+      function pageLive() {
+        return (
+          <div className="page" key="live">
+            <div className="card header-card">
+              <div>
+                <h2>Live Monitor</h2>
+                <div style={{ color: "var(--muted)", marginTop: 5, fontSize: "0.86rem" }}>Real-time telemetry from the Node server.</div>
+              </div>
+              <div className="header-right">
+                <div className="status-chip">
+                  <span className={`dot ${isOnline ? "" : "offline"}`}></span>
+                  {isOnline ? "Online" : "Offline"}
+                </div>
+                <div className="status-chip" style={{ background: voiceEnabled ? "rgba(34, 197, 94, 0.15)" : "rgba(241, 65, 94, 0.15)", color: voiceEnabled ? "#86efac" : "#fca5a5" }}>
+                  <span className={`dot`} style={{ background: voiceEnabled ? "#22c55e" : "#f14152", boxShadow: voiceEnabled ? "0 0 8px rgba(34, 197, 94, 0.5)" : "0 0 8px rgba(241, 65, 94, 0.5)" }}></span>
+                  {voiceEnabled ? "Voice ON" : "Voice OFF"}
+                </div>
+                {isSpeaking && (
+                  <div className="voice-wave" aria-label="Voice assistant speaking">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                )}
+                <div className="mono">Last ping: {lastPing}</div>
+              </div>
+            </div>
+
+            {!isOnline && (
+              <div className="offline-banner">
+                Server offline, retrying...
+              </div>
+            )}
+
+            <div className="grid-4">
+              <div className="card">
+                <div className="metric-title">Last Distance</div>
+                <div className="metric-value mono">{lastDistance == null ? "--" : `${lastDistance} cm`}</div>
+              </div>
+              <div className="card">
+                <div className="metric-title">Session Obstacles</div>
+                <CountUp value={sessionObstacles} mono={true} />
+              </div>
+              <div className="card">
+                <div className="metric-title">Water Alerts</div>
+                <CountUp value={sessionWaterAlerts} mono={true} />
+              </div>
+              <div className="card">
+                <div className="metric-title">Session Time</div>
+                <CountUp value={sessionMinutes} suffix=" min" decimals={1} mono={true} />
+              </div>
+            </div>
+
+            <div className="grid-2">
+              <div className="card">
+                <h3>Obstacle Distance Trend</h3>
+                <div className="chart-wrap">
+                  {HAS_RECHARTS ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={distanceData}>
+                        <CartesianGrid stroke="rgba(255,255,255,0.07)" />
+                        <XAxis dataKey="time" tick={{ fill: "#9ea7bc", fontSize: 11 }} />
+                        <YAxis domain={[0, 400]} tick={{ fill: "#9ea7bc", fontSize: 11 }} />
+                        <Tooltip contentStyle={{ background: "#0f1422", border: "1px solid var(--border)", borderRadius: 10 }} />
+                        <ReferenceLine y={obstacleThreshold} stroke="#ef4444" strokeDasharray="5 5" />
+                        <Line type="monotone" dataKey="distance" stroke="#3b82f6" strokeWidth={2.2} dot={false} isAnimationActive={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <SimpleLineChart data={distanceData} maxY={400} threshold={obstacleThreshold} />
+                  )}
+                </div>
+                <div className="chart-subtitle">Danger threshold: {obstacleThreshold} cm</div>
+              </div>
+
+              <div className="card">
+                <h3>Water Sensor Status</h3>
+                <div className="chart-wrap">
+                  {HAS_RECHARTS ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={waterData}>
+                        <CartesianGrid stroke="rgba(255,255,255,0.07)" />
+                        <XAxis dataKey="time" tick={{ fill: "#9ea7bc", fontSize: 11 }} />
+                        <YAxis domain={[0, 1]} tick={{ fill: "#9ea7bc", fontSize: 11 }} />
+                        <Tooltip contentStyle={{ background: "#0f1422", border: "1px solid var(--border)", borderRadius: 10 }} />
+                        <Bar dataKey="water" radius={[6, 6, 0, 0]} isAnimationActive={false}>
+                          {waterData.map((item, idx) => (
+                            <Cell key={idx} fill={item.water === 1 ? "#14b8a6" : "#3b82f6"} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <SimpleBarChart data={waterData} maxY={1} threshold={0.5} />
+                  )}
+                </div>
+                <div className="chart-subtitle">Water state: 1 = detected, 0 = dry</div>
+              </div>
+            </div>
+
+            <div className="card">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                <h3>Real-time Event Feed</h3>
+                {buzzerEnabled && <div className="alert-pill obstacle"><span className={`buzzer-light ${buzzerFlash ? "active" : ""}`}></span>Buzzer simulation</div>}
+              </div>
+              {events.length === 0 ? (
+                <div style={{ color: "var(--muted)", border: "1px dashed var(--border)", borderRadius: 12, padding: 14 }}>
+                  Waiting for sensor data...
+                </div>
+              ) : (
+                <ul className="event-list">
+                  {events.map((evt) => (
+                    <li key={evt.id} className={`event-item ${evt.id === lastEventId ? "new" : ""}`}>
+                      <div className="event-row">
+                        <span className={`badge ${evt.type}`}>{evt.type}</span>
+                        <span className="mono" style={{ color: "var(--muted)", fontSize: "0.8rem" }}>{evt.time}</span>
+                      </div>
+                      <div>{evt.message}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      function pageRoute() {
+        const safeRoute = mapSimulatedRoutes.find((route) => safestSimRoute && route.id === safestSimRoute.id) || mapSimulatedRoutes[0] || null;
+        return (
+          <div className="page" key="route">
+            <div className="card">
+              <h2 style={{ marginBottom: 4 }}>Route Navigator</h2>
+              <div style={{ color: "var(--muted)", fontSize: "0.86rem" }}>Enter start and destination, compare simulated routes by obstacle density, and automatically follow the safest route.</div>
+            </div>
+
+            <div className="card">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+                <h3 style={{ margin: 0 }}>Location-based Smart Navigation</h3>
+                <button
+                  className="btn"
+                  onClick={resolveNavigatorLocations}
+                  disabled={navResolving}
+                >
+                  {navResolving ? "Resolving..." : "Find Routes"}
+                </button>
+              </div>
+
+              <div className="grid-2" style={{ marginBottom: 12 }}>
+                <div className="slider-row" style={{ marginBottom: 0 }}>
+                  <label>
+                    <span>Starting Coordinate</span>
+                  </label>
+                  <input
+                    className="voice-select"
+                    type="text"
+                    value={navStartName}
+                    onChange={(e) => {
+                      setNavStartName(e.target.value);
+                      setNavStartCoord(parseCoordinateInput(e.target.value));
+                    }}
+                    placeholder="18.530309,73.867644"
+                  />
+                </div>
+                <div className="slider-row" style={{ marginBottom: 0 }}>
+                  <label>
+                    <span>Ending Coordinate</span>
+                  </label>
+                  <input
+                    className="voice-select"
+                    type="text"
+                    value={navEndName}
+                    onChange={(e) => {
+                      setNavEndName(e.target.value);
+                      setNavEndCoord(parseCoordinateInput(e.target.value));
+                    }}
+                    placeholder="18.529364,73.858585"
+                  />
+                </div>
+              </div>
+
+              {navError && (
+                <div style={{ color: "#fca5a5", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 10, padding: 10, marginBottom: 12 }}>
+                  {navError}
+                </div>
+              )}
+
+              {navStartCoord && navEndCoord && (
+                <div style={{ color: "var(--muted)", fontSize: "0.86rem", marginBottom: 12 }}>
+                  Start: <span className="mono">{navStartCoord.lat.toFixed(6)}, {navStartCoord.lng.toFixed(6)}</span> | Destination: <span className="mono">{navEndCoord.lat.toFixed(6)}, {navEndCoord.lng.toFixed(6)}</span>
+                </div>
+              )}
+
+              <div style={{ color: "var(--muted)", fontSize: "0.86rem", marginBottom: 12 }}>
+                System compares 4 possible routes between the same start and destination and auto-selects the safest one using minimum obstacle and water pothole count.
+              </div>
+
+              <div className="table-wrap" style={{ marginBottom: 12 }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Route</th>
+                      <th>Obstacle Count</th>
+                      <th>Water Potholes</th>
+                      <th>Distance</th>
+                      <th>Estimated Time</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {simulatedRoutes.map((route) => {
+                      const isSafest = safestSimRoute && route.id === safestSimRoute.id;
+                      const totalHazards = Number(route.hazardTotal ?? (route.obstacleCount + route.waterPotholesCount));
+                      return (
+                        <tr key={route.id}>
+                          <td>{route.name} {route.routeType ? <span style={{ color: "#9ca3af", fontSize: "0.76rem" }}>({route.routeType})</span> : null}</td>
+                          <td className="mono">{route.obstacleCount}</td>
+                          <td className="mono">{route.waterPotholesCount}</td>
+                          <td>{route.totalDistance}</td>
+                          <td>{route.estimatedTime}</td>
+                          <td>
+                            <span className={`badge ${isSafest ? "water" : "obstacle"}`}>
+                              {isSafest ? `Safest Route Selected (${totalHazards} hazards)` : `Alternative (${totalHazards} hazards)`}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <strong>Selected Safe Path:</strong>
+                <span className="badge water">{safestSimRoute ? `${safestSimRoute.name} • ${safestSimRoute.obstacleCount} obstacles • ${safestSimRoute.waterPotholesCount} water potholes` : "No route available"}</span>
+                {safestSimRoute && (
+                  <span style={{ color: "#86efac", fontSize: "0.84rem" }}>
+                    Why safest: lowest combined hazards ({safestSimRoute.hazardTotal}) among all options.
+                  </span>
+                )}
+                <button
+                  className="btn"
+                  onClick={() => {
+                    if (!safestSimRoute) return;
+                    const message = `The safest route from ${navStartName} to ${navEndName} has been selected. Please follow ${safestSimRoute.name}.`;
+                    console.log(`[Route Navigator] ${message}`);
+                    if (voiceEnabled && speechSupported && typeof speakText === "function") {
+                      speakText(message, { priority: "medium", rate: 0.92, pitch: 1.02 });
+                    }
+                  }}
+                  disabled={!safestSimRoute}
+                >
+                  Announce Safest Route
+                </button>
+              </div>
+            </div>
+
+            <div className="card">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                <h3>{safeRoute ? `${safeRoute.name} Timeline` : "No route selected"}</h3>
+                <button className="btn primary" onClick={speakSessionSummary} disabled={!voiceEnabled || !safeRoute || isSpeaking}>
+                  {isSpeaking ? "Speaking..." : "Hear Session Summary"}
+                </button>
+              </div>
+              {!voiceEnabled && <div style={{ color: "var(--muted)", marginBottom: 10, fontSize: "0.86rem" }}>Voice announcements are disabled in Settings.</div>}
+              {safeRoute ? renderTimeline(safeRoute) : <div style={{ color: "var(--muted)" }}>No route data available.</div>}
+            </div>
+
+            <div className="card">
+              <h3 style={{ marginBottom: 10 }}>Interactive Route Map</h3>
+              <MapView
+                routes={mapSimulatedRoutes}
+                currentLat={navStartCoord ? navStartCoord.lat : null}
+                currentLng={navStartCoord ? navStartCoord.lng : null}
+                latestWaypoint={latestWaypoint}
+                latestRouteIndex={safestMapIndex}
+                isOnline={isOnline}
+              />
+            </div>
+          </div>
+        );
+      }
+
+      function pageHistory() {
+        const rows = sortedHistory();
+        return (
+          <div className="page" key="history">
+            <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+              <h2>Session History</h2>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button className="btn" onClick={() => setSortDesc((v) => !v)}>Sort by Time: {sortDesc ? "Newest" : "Oldest"}</button>
+                <button className="btn primary" onClick={exportCsv} disabled={historyRows.length === 0}>Export CSV</button>
+              </div>
+            </div>
+
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Distance</th>
+                    <th>Water</th>
+                    <th>Route</th>
+                    <th>Waypoint</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.length === 0 && (
+                    <tr>
+                      <td colSpan="5" style={{ color: "var(--muted)", textAlign: "center" }}>No readings yet.</td>
+                    </tr>
+                  )}
+                  {rows.map((r, idx) => (
+                    <tr key={`${r.time}_${idx}`}>
+                      <td className="mono">{r.time}</td>
+                      <td className={typeof r.distance === "number" && r.distance < obstacleThreshold ? "distance-danger mono" : "mono"}>
+                        {typeof r.distance === "number" ? `${Math.round(r.distance)} cm` : "--"}
+                      </td>
+                      <td>
+                        <span className={`badge ${r.water === 1 ? "water" : "obstacle"}`}>{r.water === 1 ? "water" : "dry"}</span>
+                      </td>
+                      <td>{r.routeName}</td>
+                      <td>{r.waypointLabel}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="small-stats">
+              <div className="card">
+                <div className="metric-title">Total Obstacles This Session</div>
+                <div className="metric-value mono">{sessionObstacles}</div>
+              </div>
+              <div className="card">
+                <div className="metric-title">Total Water Alerts This Session</div>
+                <div className="metric-value mono">{sessionWaterAlerts}</div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      function pageSettings() {
+        return (
+          <div className="page" key="settings">
+            <div className="card">
+              <h2 style={{ marginBottom: 12 }}>Settings</h2>
+
+              <div className="slider-row">
+                <label>
+                  <span>Obstacle Alert Threshold</span>
+                  <span className="mono">{obstacleThreshold} cm</span>
+                </label>
+                <input type="range" min="20" max="200" value={obstacleThreshold} onChange={(e) => setObstacleThreshold(Number(e.target.value))} />
+              </div>
+
+              <div className="slider-row">
+                <label>
+                  <span>Water Sensor Threshold</span>
+                  <span className="mono">{waterThreshold}</span>
+                </label>
+                <input type="range" min="500" max="3500" value={waterThreshold} onChange={(e) => setWaterThreshold(Number(e.target.value))} />
+              </div>
+
+              <div className="toggle-row">
+                <span>Enable buzzer alerts simulation</span>
+                <button className={`switch ${buzzerEnabled ? "on" : ""}`} onClick={() => setBuzzerEnabled((v) => !v)} aria-label="toggle buzzer simulation"></button>
+              </div>
+
+              <div className="toggle-row">
+                <span>Enable voice announcements</span>
+                <button className={`switch ${voiceEnabled ? "on" : ""}`} onClick={() => setVoiceEnabled((v) => !v)} aria-label="toggle voice announcements"></button>
+              </div>
+
+              <div className="voice-section">
+                <h3 style={{ margin: 0 }}>Voice Assistant</h3>
+
+                {!speechSupported && (
+                  <div style={{ color: "#fca5a5", fontSize: "0.86rem" }}>
+                    Voice API is not supported in this browser. Use Chrome or Edge.
+                  </div>
+                )}
+
+                {speechSupported && !voicePrimed && (
+                  <div style={{ color: "#fde68a", fontSize: "0.86rem" }}>
+                    Tap Enable Audio once to unlock browser voice output.
+                  </div>
+                )}
+
+                <div className="voice-actions">
+                  <button className="btn" onClick={primeVoiceEngine} disabled={!voiceEnabled || !speechSupported || voicePrimed}>{voicePrimed ? "Audio Enabled" : "Enable Audio"}</button>
+                  <button className="btn primary" onClick={speakTestVoice} disabled={!voiceEnabled || !speechSupported}>Test Voice</button>
+                  <button className="btn" onClick={() => speakDashboardDescription(activePage)} disabled={!voiceEnabled || !voicePrimed || !speechSupported}>Speak Current Page</button>
+                  <button className="btn" onClick={cancelSpeech} disabled={!isSpeaking}>Stop Speech</button>
+                </div>
+
+                <div className="slider-row" style={{ marginBottom: 0 }}>
+                  <label>
+                    <span>Speech Rate</span>
+                    <span className="mono">{voiceRate.toFixed(1)}</span>
+                  </label>
+                  <select className="voice-select" value={voiceRate} onChange={(e) => setVoiceRate(Number(e.target.value))} disabled={!voiceEnabled}>
+                    <option value={0.7}>Slow (0.7)</option>
+                    <option value={0.9}>Normal (0.9)</option>
+                    <option value={1.1}>Fast (1.1)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="buzzer-indicator">
+                <span>Buzzer state</span>
+                <span className={`buzzer-light ${(buzzerEnabled && buzzerFlash) ? "active" : ""}`}></span>
+              </div>
+            </div>
+
+            <div className="card">
+              <h3 style={{ marginBottom: 10 }}>Connection Status</h3>
+              <div className="conn-grid">
+                <div>Server URL: <span className="mono">{SERVER_URL}</span></div>
+                <div>Last ping time: <span className="mono">{lastPing}</span></div>
+                <div>Status: <span style={{ color: isOnline ? "#86efac" : "#fca5a5" }}>{isOnline ? "Connected" : "Offline"}</span></div>
+                <div>
+                  <button className="btn primary" onClick={manualReconnect}>Manual Reconnect</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      let pageContent = pageLive();
+      if (activePage === "route") pageContent = pageRoute();
+      if (activePage === "history") pageContent = pageHistory();
+      if (activePage === "settings") pageContent = pageSettings();
+
+      return (
+        <div className="app-shell">
+          <aside className="sidebar">
+            <div className="brand">
+              <div className="brand-title">Smart Assistive Blind Stick</div>
+              <div className="brand-sub">IoT dashboard for live mobility assistance</div>
+              <div className="server-pill">
+                <span className={`dot ${isOnline ? "" : "offline"}`}></span>
+                <span>{isOnline ? "Server reachable" : "Server offline"}</span>
+              </div>
+            </div>
+
+            <nav className="nav">
+              {pages.map((p) => (
+                <button
+                  key={p.id}
+                  className={`nav-item ${activePage === p.id ? "active" : ""} ${(p.id === "live" && livePulse) ? "live-pulse" : ""}`}
+                  onClick={() => setActivePage(p.id)}
+                >
+                  <NavIcon name={p.id} />
+                  <span>{p.label}</span>
+                </button>
+              ))}
+            </nav>
+          </aside>
+
+          <main className="main">{pageContent}</main>
+
+          <div className="mobile-tabs">
+            {pages.map((p) => (
+              <button key={p.id} className={`mobile-tab ${activePage === p.id ? "active" : ""}`} onClick={() => setActivePage(p.id)}>
+                <NavIcon name={p.id} />
+                <span>{p.label.split(" ")[0]}</span>
+              </button>
+            ))}
+          </div>
+
+          <button className={`voice-fab ${isSpeaking ? "speaking" : ""}`} onClick={() => speakDashboardDescription(activePage)} aria-label="Speak current page">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V6.5a3.5 3.5 0 0 0-7 0V11a3.5 3.5 0 0 0 3.5 3.5Zm6-3.5a1 1 0 0 0-2 0 4 4 0 0 1-8 0 1 1 0 0 0-2 0 6 6 0 0 0 5 5.91V20h-2a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-2v-3.09A6 6 0 0 0 18 11Z" />
+            </svg>
+          </button>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
