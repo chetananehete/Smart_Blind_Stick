@@ -1,0 +1,7 @@
+node_modules/
+*.log
+.DS_Store
+.env
+sensor-log.json
+latest-data.json
+routes.json
