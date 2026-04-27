@@ -1007,9 +1007,10 @@
       const explicit = params.get("api");
       if (explicit) return explicit;
 
-      const onNodePort = window.location.protocol.startsWith("http") && window.location.port === "3000";
-      if (onNodePort) return window.location.origin;
-
+      // If running on same domain (Render or local), use same origin
+      if (window.location.port) return window.location.origin;
+      
+      // Otherwise default to localhost:3000 for local development
       return "http://localhost:3000";
     })();
 
