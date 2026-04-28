@@ -902,14 +902,7 @@
   <script>
     (function () {
       function showRuntimeError(msg) {
-        var panel = document.getElementById("runtimeErrorPanel");
-        if (!panel) return;
-        panel.style.display = "block";
-        if (panel.textContent) {
-          panel.textContent += "\n\n" + msg;
-        } else {
-          panel.textContent = "Runtime diagnostics:\n\n" + msg;
-        }
+        console.warn("[runtime]", msg);
       }
 
       window.__showRuntimeError = showRuntimeError;
@@ -1454,7 +1447,7 @@
                     <div className="safety-fill" style={{ width: `${safeScore}%`, background: safetyColor(safeScore) }} />
                   </div>
 
-                  {route.mlRecommended && <span className="ml-chip">ML recommended</span>}
+                  {route.mlRecommended && <span className="ml-chip">Recommended</span>}
 
                   <div className="route-meta-row">
                     <span>{route.totalDistance || "-"}</span>
