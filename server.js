@@ -15,6 +15,17 @@ const sensorLogPath = path.join(__dirname, 'sensor-log.json');
 const latestDataPath = path.join(__dirname, 'latest-data.json');
 let routeData = [];
 
+function currentIstTime() {
+  return new Date().toLocaleTimeString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour12: true
+  });
+}
+
+function currentIsoTime() {
+  return new Date().toISOString();
+}
+
 if (fs.existsSync(routesPath)) {
   try {
     routeData = JSON.parse(fs.readFileSync(routesPath, 'utf8'));
@@ -27,7 +38,8 @@ if (fs.existsSync(routesPath)) {
 
 function sanitizeReading(source = {}) {
   return {
-    time: source.time ?? new Date().toLocaleTimeString(),
+    time: source.time ?? currentIstTime(),
+    timestamp: source.timestamp ?? currentIsoTime(),
     distance: source.distance ?? 999,
     water: source.water ?? 0,
     lat: source.lat ?? null,
@@ -62,7 +74,8 @@ const MAX_LOG = 200;
 app.post('/data', (req, res) => {
   const entry = sanitizeReading({
     ...req.body,
-    time: new Date().toLocaleTimeString()
+    time: currentIstTime(),
+    timestamp: currentIsoTime()
   });
 
   sensorLog.push(entry);
